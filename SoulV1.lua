@@ -2,6 +2,13 @@
 -- loadstring(game:HttpGet("https://raw.githubusercontent.com/SoulClientGui/-soul-api/main/SoulV1.lua"))()
 
 local Players          = game:GetService("Players")
+local _gui = Players.LocalPlayer:WaitForChild("PlayerGui")
+local function _showErr(msg)
+    local sg = Instance.new("ScreenGui"); sg.Name="SoulErr"; sg.ResetOnSpawn=false; sg.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; sg.DisplayOrder=9999; sg.Parent=_gui
+    local f = Instance.new("Frame"); f.Size=UDim2.new(1,0,0,80); f.Position=UDim2.new(0,0,0,0); f.BackgroundColor3=Color3.fromRGB(180,0,0); f.BorderSizePixel=0; f.Parent=sg
+    local t = Instance.new("TextLabel"); t.Size=UDim2.new(1,-10,1,0); t.Position=UDim2.new(0,5,0,0); t.BackgroundTransparency=1; t.Text="[Soul V1 ERROR] "..tostring(msg); t.TextColor3=Color3.new(1,1,1); t.TextSize=13; t.Font=Enum.Font.GothamBold; t.TextWrapped=true; t.TextXAlignment=Enum.TextXAlignment.Left; t.Parent=f
+end
+local _ok, _err = pcall(function()
 local UserInputService = game:GetService("UserInputService")
 local TweenService     = game:GetService("TweenService")
 local RunService       = game:GetService("RunService")
@@ -2795,3 +2802,6 @@ task.spawn(function()
     task.wait(0.4)
     ksKeyBox:CaptureFocus()
 end)
+
+end) -- end pcall
+if not _ok then _showErr(_err) end

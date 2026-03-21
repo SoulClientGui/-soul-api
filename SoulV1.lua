@@ -1,6 +1,3 @@
--- Soul V1 | Debug wrapper
-local ok, err = pcall(function()
-
 -- Soul V1 | Bloodshot Red | Onyx-style Layout
 -- If this doesn't load, check your executor console for errors
 
@@ -33,11 +30,6 @@ local SPECIAL_STYLES = {
     ["842812878"]  = "staffbob",
 }
 
--- Image asset IDs for logo boxes (replace 0 with actual Roblox asset ID)
-local LOGO_IMAGES = {
-    ["842812878"] = "rbxassetid://95353044120098", -- Staff BOB photo
-}
-
 local function fetchNametag(targetPlayer, callback)
     local tag = CUSTOM_TAGS[tostring(targetPlayer.UserId)]
     callback(tag or "Soul User")
@@ -46,10 +38,6 @@ end
 
 local function getStyle(targetPlayer)
     return SPECIAL_STYLES[tostring(targetPlayer and targetPlayer.UserId)] or "default"
-end
-
-local function getLogoImage(targetPlayer)
-    return LOGO_IMAGES[tostring(targetPlayer and targetPlayer.UserId)]
 end
 
 local function registerNametag(targetPlayer, nametagText)
@@ -122,7 +110,6 @@ local function attachTag(character, tagOwner, customName)
 
     -- Work out which style this player gets
     local style = getStyle(tagOwner)  -- "owner" | "staffbob" | "default"
-    local logoImage = getLogoImage(tagOwner)
 
     -- ── Palettes ──────────────────────────────────────────────────
     -- owner: black bg, white glow
@@ -193,32 +180,36 @@ local function attachTag(character, tagOwner, customName)
     local glowStroke = Instance.new("UIStroke", glowRing)
     glowStroke.Color = tagGlowC; glowStroke.Thickness = (style=="owner" or style=="staffbob") and 6 or 4; glowStroke.Transparency = 1
 
-    -- Logo box — image asset for everyone
+    -- Logo box
     local logoBox = Instance.new("Frame")
     logoBox.Size = UDim2.new(0, 40, 0, 40); logoBox.Position = UDim2.new(0, 8, 0.5, -20)
-    logoBox.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-    logoBox.BackgroundTransparency = 0
+    logoBox.BackgroundColor3 = tagLogo; logoBox.BackgroundTransparency = 1
     logoBox.Parent = tag
     Instance.new("UICorner", logoBox).CornerRadius = UDim.new(0, 10)
 
-    -- Use the uploaded image as the logo for everyone
-    -- staffbob gets their own photo, everyone else gets the same image
-    local logoAsset = logoImage or "rbxassetid://95353044120098"
-    local img = Instance.new("ImageLabel")
-    img.Size = UDim2.new(1, 0, 1, 0)
-    img.BackgroundTransparency = 1
-    img.Image = logoAsset
-    img.ScaleType = Enum.ScaleType.Crop
-    img.ImageColor3 = Color3.new(1, 1, 1)
-    img.Parent = logoBox
-    Instance.new("UICorner", logoBox).CornerRadius = UDim.new(0, 10)
+    local function iconBar(py, color)
+        local f = Instance.new("Frame")
+        f.Size = UDim2.new(0, 22, 0, 4); f.Position = UDim2.new(0, 9, 0, py)
+        f.BackgroundColor3 = color; f.BorderSizePixel = 0; f.Parent = logoBox
+        Instance.new("UICorner", f).CornerRadius = UDim.new(0, 2)
+        return f
+    end
+    iconBar(8,  tagIconC)
+    local iconMid = iconBar(18, tagIconM)
+    iconBar(28, tagIconC)
 
-    local iconMid = img
+    local function iconVert(px, py, color)
+        local f = Instance.new("Frame")
+        f.Size = UDim2.new(0, 4, 0, 14); f.Position = UDim2.new(0, px, 0, py)
+        f.BackgroundColor3 = color; f.BorderSizePixel = 0; f.Parent = logoBox
+        return f
+    end
+    iconVert(9,  8,  tagIconC)
+    iconVert(27, 18, tagIconM)
 
-    -- Pulse brightness gently
-    TweenService:Create(img,
-        TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-        { ImageColor3 = Color3.fromRGB(180, 180, 180) }
+    TweenService:Create(iconMid,
+        TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+        { BackgroundColor3 = isSpecial and Color3.fromRGB(255,255,255) or Color3.fromRGB(255, 120, 255) }
     ):Play()
 
     local displayName = customName or (tagOwner and tagOwner.Name) or "Soul User"
@@ -2506,14 +2497,9 @@ wrapper.Visible = false
 
 -- Whitelisted users skip key screen entirely
 if WHITELISTED_IDS[tostring(player.UserId)] then
-    task.spawn(function()
-        task.wait(0.3)
-        openMainGui()
-    end)
-    return
-end
-
--- ── Key screen for everyone else ────────────────────────────────
+    task.spawn(function() task.wait(0.3); openMainGui() end)
+else
+-- Key screen for everyone else
 
 local keyGui = Instance.new("ScreenGui")
 keyGui.Name="SoulKeySystem"; keyGui.ResetOnSpawn=false
@@ -2686,9 +2672,4 @@ task.spawn(function()
     TweenService:Create(ksSubmitBtn,TweenInfo.new(0.25),{}):Play()
     ksKeyBox:CaptureFocus()
 end)
-
-
-end)
-if not ok then
-    warn("[Soul V1 ERROR]: " .. tostring(err))
-end
+end -- end else (non-whitelisted key screen)

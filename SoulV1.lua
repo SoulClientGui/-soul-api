@@ -1,3 +1,6 @@
+-- Soul V1 | Debug wrapper
+local ok, err = pcall(function()
+
 -- Soul V1 | Bloodshot Red | Onyx-style Layout
 -- If this doesn't load, check your executor console for errors
 
@@ -2683,3 +2686,9 @@ task.spawn(function()
     TweenService:Create(ksSubmitBtn,TweenInfo.new(0.25),{}):Play()
     ksKeyBox:CaptureFocus()
 end)
+
+
+end)
+if not ok then
+    warn("[Soul V1 ERROR]: " .. tostring(err))
+end

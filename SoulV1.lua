@@ -22,7 +22,7 @@ local CUSTOM_TAGS = {
 
 local function fetchNametag(targetPlayer, callback)
     local tag = CUSTOM_TAGS[tostring(targetPlayer.UserId)]
-    callback(tag or targetPlayer.Name)
+    callback(tag or "Soul User")
 end
 
 local function registerNametag(targetPlayer, nametagText)
@@ -261,57 +261,28 @@ local function attachTag(character, tagOwner, customName)
     task.delay(0.65, startGlitch)
 end
 
--- ===================== MARKER-BASED MUTUAL TAGGING =====================
-local MARKER_NAME = "SoulV1Active"
+-- ===================== SHOW TAGS ON ALL PLAYERS =====================
+-- Tags show on every player automatically, no marker or injection needed
 
-local function plantMarker(character)
-    local head = character:WaitForChild("Head", 10)
-    if not head or head:FindFirstChild(MARKER_NAME) then return end
-    local marker = Instance.new("BillboardGui")
-    marker.Name    = MARKER_NAME
-    marker.Size    = UDim2.new(0, 0, 0, 0)
-    marker.Enabled = false
-    marker.Parent  = head
-
-    -- Register this player's nametag on the server then show our own tag
-    registerNametag(player, player.Name)
-    fetchNametag(player, function(nametag)
-        attachTag(character, player, nametag)
+local function applyTagToPlayer(p, char)
+    task.spawn(function()
+        local head = char:WaitForChild("Head", 10)
+        if not head then return end
+        fetchNametag(p, function(nametag)
+            attachTag(char, p, nametag)
+        end)
     end)
 end
 
-if player.Character then task.spawn(plantMarker, player.Character) end
-player.CharacterAdded:Connect(plantMarker)
+-- Own tag
+if player.Character then applyTagToPlayer(player, player.Character) end
+player.CharacterAdded:Connect(function(char) applyTagToPlayer(player, char) end)
 
--- Watch another player: when their Head has SoulV1Active, fetch their nametag and show it
+-- Every other player
 local function watchPlayer(p)
     if p == player then return end
-    local function onCharAdded(char)
-        task.spawn(function()
-            local head = char:WaitForChild("Head", 10)
-            if not head then return end
-            local function applyTag()
-                fetchNametag(p, function(nametag)
-                    attachTag(char, p, nametag)
-                end)
-            end
-            if head:FindFirstChild(MARKER_NAME) then
-                applyTag(); return
-            end
-            local conn
-            conn = head.ChildAdded:Connect(function(child)
-                if child.Name == MARKER_NAME then
-                    conn:Disconnect()
-                    applyTag()
-                end
-            end)
-            char.AncestryChanged:Connect(function()
-                if not char.Parent then pcall(function() conn:Disconnect() end) end
-            end)
-        end)
-    end
-    if p.Character then onCharAdded(p.Character) end
-    p.CharacterAdded:Connect(onCharAdded)
+    if p.Character then applyTagToPlayer(p, p.Character) end
+    p.CharacterAdded:Connect(function(char) applyTagToPlayer(p, char) end)
 end
 
 for _, p in ipairs(Players:GetPlayers()) do watchPlayer(p) end

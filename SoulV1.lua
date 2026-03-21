@@ -86,13 +86,41 @@ openSound.Volume  = 0.6
 openSound.Parent  = SoundService
 
 -- ===================== BILLBOARD TAG =====================
--- Now accepts an optional customName string from the API
 local function attachTag(character, tagOwner, customName)
     local head = character:WaitForChild("Head", 10)
     if not head then return end
 
     local existing = head:FindFirstChild("SoulBillboard")
     if existing then existing:Destroy() end
+
+    -- Is this tag for the owner?
+    local isOwner = (tagOwner and tagOwner.Name == NAMETAG_OWNER)
+
+    -- ── Palettes ──────────────────────────────────────────────────
+    -- Owner: black background, white glowing text
+    local OWN_BG       = Color3.fromRGB(5,   5,   5)   -- near black
+    local OWN_LOGO     = Color3.fromRGB(15,  15,  15)
+    local OWN_STROKE   = Color3.fromRGB(255, 255, 255)  -- white border
+    local OWN_GLOW     = Color3.fromRGB(220, 220, 220)  -- white glow ring
+    local OWN_TEXT     = Color3.fromRGB(255, 255, 255)  -- white name
+    local OWN_HANDLE   = Color3.fromRGB(180, 180, 180)  -- grey handle
+    local OWN_ICON     = Color3.fromRGB(200, 200, 200)
+
+    -- Others: purple
+    local PURPLE_BRIGHT = Color3.fromRGB(180, 0, 255)
+    local PURPLE_GLOW   = Color3.fromRGB(210, 80, 255)
+    local PURPLE_DIM    = Color3.fromRGB(140, 50, 200)
+    local PURPLE_BG     = Color3.fromRGB(20, 5, 30)
+    local PURPLE_LOGO   = Color3.fromRGB(35, 10, 50)
+
+    local tagBG      = isOwner and OWN_BG      or PURPLE_BG
+    local tagLogo    = isOwner and OWN_LOGO     or PURPLE_LOGO
+    local tagStrokeC = isOwner and OWN_STROKE   or PURPLE_BRIGHT
+    local tagGlowC   = isOwner and OWN_GLOW     or PURPLE_GLOW
+    local tagTextC   = isOwner and OWN_TEXT     or PURPLE_GLOW
+    local tagHandleC = isOwner and OWN_HANDLE   or PURPLE_DIM
+    local tagIconC   = isOwner and OWN_ICON     or PURPLE_GLOW
+    local tagIconM   = isOwner and OWN_ICON     or PURPLE_BRIGHT
 
     local billboard = Instance.new("BillboardGui")
     billboard.Name             = "SoulBillboard"
@@ -106,17 +134,10 @@ local function attachTag(character, tagOwner, customName)
     billboard.Adornee          = head
     billboard.Parent           = head
 
-    -- Purple palette
-    local PURPLE_BRIGHT = Color3.fromRGB(180, 0, 255)
-    local PURPLE_GLOW   = Color3.fromRGB(210, 80, 255)
-    local PURPLE_DIM    = Color3.fromRGB(140, 50, 200)
-    local PURPLE_BG     = Color3.fromRGB(20, 5, 30)
-    local PURPLE_LOGO   = Color3.fromRGB(35, 10, 50)
-
     -- Pill
     local tag = Instance.new("Frame")
     tag.Size                   = UDim2.new(1, 0, 1, 0)
-    tag.BackgroundColor3       = PURPLE_BG
+    tag.BackgroundColor3       = tagBG
     tag.BorderSizePixel        = 0
     tag.BackgroundTransparency = 1
     tag.Active                 = true
@@ -124,7 +145,7 @@ local function attachTag(character, tagOwner, customName)
     Instance.new("UICorner", tag).CornerRadius = UDim.new(0, 28)
 
     local tagStroke = Instance.new("UIStroke", tag)
-    tagStroke.Color = PURPLE_BRIGHT; tagStroke.Thickness = 2.5; tagStroke.Transparency = 1
+    tagStroke.Color = tagStrokeC; tagStroke.Thickness = 2.5; tagStroke.Transparency = 1
 
     -- Glow ring
     local glowRing = Instance.new("Frame")
@@ -133,12 +154,12 @@ local function attachTag(character, tagOwner, customName)
     glowRing.Parent = tag
     Instance.new("UICorner", glowRing).CornerRadius = UDim.new(0, 32)
     local glowStroke = Instance.new("UIStroke", glowRing)
-    glowStroke.Color = PURPLE_GLOW; glowStroke.Thickness = 4; glowStroke.Transparency = 1
+    glowStroke.Color = tagGlowC; glowStroke.Thickness = isOwner and 6 or 4; glowStroke.Transparency = 1
 
     -- Logo box
     local logoBox = Instance.new("Frame")
     logoBox.Size = UDim2.new(0, 40, 0, 40); logoBox.Position = UDim2.new(0, 8, 0.5, -20)
-    logoBox.BackgroundColor3 = PURPLE_LOGO; logoBox.BackgroundTransparency = 1
+    logoBox.BackgroundColor3 = tagLogo; logoBox.BackgroundTransparency = 1
     logoBox.Parent = tag
     Instance.new("UICorner", logoBox).CornerRadius = UDim.new(0, 10)
 
@@ -149,9 +170,9 @@ local function attachTag(character, tagOwner, customName)
         Instance.new("UICorner", f).CornerRadius = UDim.new(0, 2)
         return f
     end
-    iconBar(8,  PURPLE_GLOW)
-    local iconMid = iconBar(18, PURPLE_BRIGHT)
-    iconBar(28, PURPLE_GLOW)
+    iconBar(8,  tagIconC)
+    local iconMid = iconBar(18, tagIconM)
+    iconBar(28, tagIconC)
 
     local function iconVert(px, py, color)
         local f = Instance.new("Frame")
@@ -159,15 +180,14 @@ local function attachTag(character, tagOwner, customName)
         f.BackgroundColor3 = color; f.BorderSizePixel = 0; f.Parent = logoBox
         return f
     end
-    iconVert(9,  8,  PURPLE_GLOW)
-    iconVert(27, 18, PURPLE_BRIGHT)
+    iconVert(9,  8,  tagIconC)
+    iconVert(27, 18, tagIconM)
 
     TweenService:Create(iconMid,
         TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-        { BackgroundColor3 = Color3.fromRGB(255, 120, 255) }
+        { BackgroundColor3 = isOwner and Color3.fromRGB(255,255,255) or Color3.fromRGB(255, 120, 255) }
     ):Play()
 
-    -- ── Labels: use customName from API, fallback to Roblox username ──
     local displayName = customName or (tagOwner and tagOwner.Name) or "Soul User"
     local handleText  = "@" .. (tagOwner and tagOwner.Name or "unknown")
 
@@ -177,15 +197,21 @@ local function attachTag(character, tagOwner, customName)
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Size = UDim2.new(1, -58, 0, 24); nameLabel.Position = UDim2.new(0, 54, 0, nameLabelBaseY)
     nameLabel.BackgroundTransparency = 1; nameLabel.Text = displayName
-    nameLabel.TextColor3 = PURPLE_GLOW; nameLabel.TextTransparency = 1
+    nameLabel.TextColor3 = tagTextC; nameLabel.TextTransparency = 1
     nameLabel.TextSize = 15; nameLabel.Font = Enum.Font.GothamBold
     nameLabel.TextXAlignment = Enum.TextXAlignment.Left; nameLabel.Parent = tag
+
+    -- Owner gets a white text stroke (glow effect)
+    if isOwner then
+        local ts = Instance.new("UIStroke", nameLabel)
+        ts.Color = Color3.fromRGB(255, 255, 255); ts.Thickness = 1.5; ts.Transparency = 0.3
+    end
 
     local handleLabel = Instance.new("TextLabel")
     handleLabel.Size = UDim2.new(1, -58, 0, 18); handleLabel.Position = UDim2.new(0, 54, 0, handleLabelBaseY)
     handleLabel.BackgroundTransparency = 1
     handleLabel.Text = handleText
-    handleLabel.TextColor3 = PURPLE_DIM; handleLabel.TextTransparency = 1
+    handleLabel.TextColor3 = tagHandleC; handleLabel.TextTransparency = 1
     handleLabel.TextSize = 12; handleLabel.Font = Enum.Font.Gotham
     handleLabel.TextXAlignment = Enum.TextXAlignment.Left; handleLabel.Parent = tag
 
@@ -219,33 +245,68 @@ local function attachTag(character, tagOwner, customName)
         end
     end)
 
-    -- Glitch
+    -- Glitch — owner gets intense white glitch, others get purple glitch
     local function startGlitch()
         local FLASH = Color3.fromRGB(255, 255, 255)
         local fastEnd = tick() + 2
         task.spawn(function()
-            while tick() < fastEnd and nameLabel.Parent do
-                nameLabel.TextColor3 = FLASH;       task.wait(0.03)
-                nameLabel.TextColor3 = PURPLE_BRIGHT; task.wait(0.03)
-                nameLabel.TextColor3 = Color3.fromRGB(100, 0, 200); task.wait(0.02)
-                nameLabel.TextColor3 = PURPLE_GLOW;  task.wait(0.04)
-                tagStroke.Color = Color3.fromRGB(255, 100, 255); task.wait(0.03)
-                tagStroke.Color = PURPLE_BRIGHT
-            end
-            nameLabel.TextColor3 = PURPLE_GLOW
-            tagStroke.Color = PURPLE_BRIGHT
-            while nameLabel.Parent do
-                task.wait(math.random(30, 80) / 10)
-                if not nameLabel.Parent then break end
-                for _ = 1, math.random(2, 3) do
-                    nameLabel.TextColor3 = FLASH;         task.wait(0.05)
-                    nameLabel.TextColor3 = PURPLE_BRIGHT; task.wait(0.05)
-                    nameLabel.TextColor3 = Color3.fromRGB(100, 0, 200); task.wait(0.04)
+            if isOwner then
+                -- Owner: aggressive white glitch on spawn
+                while tick() < fastEnd and nameLabel.Parent do
+                    nameLabel.TextColor3 = FLASH;                          task.wait(0.02)
+                    nameLabel.TextColor3 = Color3.fromRGB(180,180,180);    task.wait(0.02)
+                    nameLabel.TextColor3 = Color3.fromRGB(0, 0, 0);        task.wait(0.015)
+                    nameLabel.TextColor3 = FLASH;                          task.wait(0.03)
+                    tagStroke.Color = Color3.fromRGB(0,0,0);               task.wait(0.02)
+                    tagStroke.Color = OWN_STROKE
+                end
+                nameLabel.TextColor3 = OWN_TEXT
+                tagStroke.Color = OWN_STROKE
+                -- Ongoing random white glitch
+                while nameLabel.Parent do
+                    task.wait(math.random(15, 50) / 10)
+                    if not nameLabel.Parent then break end
+                    for _ = 1, math.random(3, 6) do
+                        nameLabel.TextColor3 = FLASH;                        task.wait(0.03)
+                        nameLabel.TextColor3 = Color3.fromRGB(80,80,80);     task.wait(0.03)
+                        nameLabel.TextColor3 = Color3.fromRGB(0,0,0);        task.wait(0.02)
+                        nameLabel.TextColor3 = FLASH;                        task.wait(0.02)
+                    end
+                    nameLabel.TextColor3 = OWN_TEXT
+                    -- Flicker the border
+                    TweenService:Create(tagStroke, TweenInfo.new(0.05), { Color = Color3.fromRGB(0,0,0) }):Play()
+                    task.wait(0.08)
+                    TweenService:Create(tagStroke, TweenInfo.new(0.2),  { Color = OWN_STROKE }):Play()
+                    -- Flicker glow ring
+                    TweenService:Create(glowStroke, TweenInfo.new(0.05), { Transparency = 1 }):Play()
+                    task.wait(0.1)
+                    TweenService:Create(glowStroke, TweenInfo.new(0.3),  { Transparency = 0.3 }):Play()
+                end
+            else
+                -- Others: standard purple glitch
+                while tick() < fastEnd and nameLabel.Parent do
+                    nameLabel.TextColor3 = FLASH;        task.wait(0.03)
+                    nameLabel.TextColor3 = PURPLE_BRIGHT; task.wait(0.03)
+                    nameLabel.TextColor3 = Color3.fromRGB(100, 0, 200); task.wait(0.02)
+                    nameLabel.TextColor3 = PURPLE_GLOW;  task.wait(0.04)
+                    tagStroke.Color = Color3.fromRGB(255, 100, 255); task.wait(0.03)
+                    tagStroke.Color = PURPLE_BRIGHT
                 end
                 nameLabel.TextColor3 = PURPLE_GLOW
-                TweenService:Create(tagStroke, TweenInfo.new(0.1),  { Color = Color3.fromRGB(255, 160, 255) }):Play()
-                task.wait(0.15)
-                TweenService:Create(tagStroke, TweenInfo.new(0.4),  { Color = PURPLE_BRIGHT }):Play()
+                tagStroke.Color = PURPLE_BRIGHT
+                while nameLabel.Parent do
+                    task.wait(math.random(30, 80) / 10)
+                    if not nameLabel.Parent then break end
+                    for _ = 1, math.random(2, 3) do
+                        nameLabel.TextColor3 = FLASH;         task.wait(0.05)
+                        nameLabel.TextColor3 = PURPLE_BRIGHT; task.wait(0.05)
+                        nameLabel.TextColor3 = Color3.fromRGB(100, 0, 200); task.wait(0.04)
+                    end
+                    nameLabel.TextColor3 = PURPLE_GLOW
+                    TweenService:Create(tagStroke, TweenInfo.new(0.1), { Color = Color3.fromRGB(255, 160, 255) }):Play()
+                    task.wait(0.15)
+                    TweenService:Create(tagStroke, TweenInfo.new(0.4), { Color = PURPLE_BRIGHT }):Play()
+                end
             end
         end)
     end
@@ -254,7 +315,7 @@ local function attachTag(character, tagOwner, customName)
     local fi = TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
     TweenService:Create(tag,         fi, { BackgroundTransparency = 0 }):Play()
     TweenService:Create(tagStroke,   fi, { Transparency = 0 }):Play()
-    TweenService:Create(glowStroke,  fi, { Transparency = 0.6 }):Play()
+    TweenService:Create(glowStroke,  fi, { Transparency = isOwner and 0.3 or 0.6 }):Play()
     TweenService:Create(logoBox,     fi, { BackgroundTransparency = 0 }):Play()
     TweenService:Create(nameLabel,   fi, { TextTransparency = 0 }):Play()
     TweenService:Create(handleLabel, fi, { TextTransparency = 0 }):Play()

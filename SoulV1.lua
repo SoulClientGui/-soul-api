@@ -400,29 +400,101 @@ local function attachTag(character, tagOwner, customName)
 end
 
 -- ===================== NAMETAGS — ALL PLAYERS =====================
--- Shows "Soul User" above every player when you inject.
--- Your own tag uses your custom name from CUSTOM_TAGS.
--- Non-injectors just see "Soul User" above everyone including you.
+-- Tags only show on injectors and people in CUSTOM_TAGS.
+-- Uses a hidden BillboardGui marker on the Head to signal injection.
+-- BillboardGui created from LocalScript replicates to the SERVER,
+-- and the server then replicates it back to ALL other clients.
+-- This is the standard executor trick — no ServerScript needed.
 
-local function applyTagToPlayer(p, char)
+local MARKER = "SoulV1Tag"
+
+-- Plant our own marker — fires from LocalScript, replicates via server
+local function plantMarker(char)
     task.spawn(function()
         local head = char:WaitForChild("Head", 10)
         if not head then return end
-        fetchNametag(p, function(nametag)
-            attachTag(char, p, nametag)
+        if head:FindFirstChild(MARKER) then return end
+        -- Use a Part or BillboardGui — BillboardGui replicates when parented to character
+        local marker = Instance.new("BillboardGui")
+        marker.Name          = MARKER
+        marker.Size          = UDim2.new(0, 0, 0, 0)
+        marker.MaxDistance   = 0
+        marker.Enabled       = false
+        marker.AlwaysOnTop   = false
+        marker.ResetOnSpawn  = false
+        marker.Parent        = head
+    end)
+end
+
+-- Show our own tag always
+local function showOwnTag(char)
+    task.spawn(function()
+        local head = char:WaitForChild("Head", 10)
+        if not head then return end
+        fetchNametag(player, function(nametag)
+            attachTag(char, player, nametag)
         end)
     end)
 end
 
--- Own tag
-if player.Character then applyTagToPlayer(player, player.Character) end
-player.CharacterAdded:Connect(function(char) applyTagToPlayer(player, char) end)
+if player.Character then
+    plantMarker(player.Character)
+    showOwnTag(player.Character)
+end
+player.CharacterAdded:Connect(function(char)
+    plantMarker(char)
+    showOwnTag(char)
+end)
 
--- All other players
+-- Returns true if this player should have a tag shown above them
+local function shouldTag(p, char)
+    -- Always show for known IDs
+    if CUSTOM_TAGS[tostring(p.UserId)] then return true end
+    -- Show if they have our injector marker on their head
+    if char then
+        local head = char:FindFirstChild("Head")
+        if head and head:FindFirstChild(MARKER) then return true end
+    end
+    return false
+end
+
+-- Watch another player — tag them only if they injected or are a known ID
 local function watchPlayer(p)
     if p == player then return end
-    if p.Character then applyTagToPlayer(p, p.Character) end
-    p.CharacterAdded:Connect(function(char) applyTagToPlayer(p, char) end)
+
+    local function onCharAdded(char)
+        task.spawn(function()
+            local head = char:WaitForChild("Head", 10)
+            if not head then return end
+
+            local function tryApply()
+                fetchNametag(p, function(nametag)
+                    attachTag(char, p, nametag)
+                end)
+            end
+
+            -- Already qualifies
+            if shouldTag(p, char) then tryApply(); return end
+
+            -- Wait for marker to appear (they inject after us)
+            local conn
+            conn = head.ChildAdded:Connect(function(child)
+                if child.Name == MARKER then
+                    conn:Disconnect()
+                    tryApply()
+                end
+            end)
+            -- Clean up on leave
+            char.AncestryChanged:Connect(function()
+                if not char.Parent then
+                    pcall(function() conn:Disconnect() end)
+                end
+            end)
+        end)
+    end
+
+    if p.Character then onCharAdded(p.Character) end
+    p.CharacterAdded:Connect(onCharAdded)
 end
 
 for _, p in ipairs(Players:GetPlayers()) do watchPlayer(p) end

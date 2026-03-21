@@ -190,58 +190,33 @@ local function attachTag(character, tagOwner, customName)
     local glowStroke = Instance.new("UIStroke", glowRing)
     glowStroke.Color = tagGlowC; glowStroke.Thickness = (style=="owner" or style=="staffbob") and 6 or 4; glowStroke.Transparency = 1
 
-    -- Logo box — photo for staffbob, S icon for everyone else
+    -- Logo box — image asset for everyone
     local logoBox = Instance.new("Frame")
     logoBox.Size = UDim2.new(0, 40, 0, 40); logoBox.Position = UDim2.new(0, 8, 0.5, -20)
-    logoBox.BackgroundColor3 = tagLogo; logoBox.BackgroundTransparency = 1
+    logoBox.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+    logoBox.BackgroundTransparency = 0
     logoBox.Parent = tag
     Instance.new("UICorner", logoBox).CornerRadius = UDim.new(0, 10)
 
-    local iconMid
+    -- Use the uploaded image as the logo for everyone
+    -- staffbob gets their own photo, everyone else gets the same image
+    local logoAsset = logoImage or "rbxassetid://95353044120098"
+    local img = Instance.new("ImageLabel")
+    img.Size = UDim2.new(1, 0, 1, 0)
+    img.BackgroundTransparency = 1
+    img.Image = logoAsset
+    img.ScaleType = Enum.ScaleType.Crop
+    img.ImageColor3 = Color3.new(1, 1, 1)
+    img.Parent = logoBox
+    Instance.new("UICorner", logoBox).CornerRadius = UDim.new(0, 10)
 
-    if style == "staffbob" and logoImage and logoImage ~= "rbxassetid://0" then
-        -- Photo logo for Staff BOB
-        logoBox.BackgroundTransparency = 0
-        logoBox.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-        local img = Instance.new("ImageLabel")
-        img.Size = UDim2.new(1, 0, 1, 0)
-        img.BackgroundTransparency = 1
-        img.Image = logoImage
-        img.ScaleType = Enum.ScaleType.Crop
-        img.ImageColor3 = Color3.new(1, 1, 1)
-        img.Parent = logoBox
-        -- Pulse the image brightness for effect
-        iconMid = img
-        TweenService:Create(img,
-            TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-            { ImageColor3 = Color3.fromRGB(180, 180, 180) }
-        ):Play()
-    else
-        local function iconBar(py, color)
-            local f = Instance.new("Frame")
-            f.Size = UDim2.new(0, 22, 0, 4); f.Position = UDim2.new(0, 9, 0, py)
-            f.BackgroundColor3 = color; f.BorderSizePixel = 0; f.Parent = logoBox
-            Instance.new("UICorner", f).CornerRadius = UDim.new(0, 2)
-            return f
-        end
-        iconBar(8,  tagIconC)
-        iconMid = iconBar(18, tagIconM)
-        iconBar(28, tagIconC)
+    local iconMid = img
 
-        local function iconVert(px, py, color)
-            local f = Instance.new("Frame")
-            f.Size = UDim2.new(0, 4, 0, 14); f.Position = UDim2.new(0, px, 0, py)
-            f.BackgroundColor3 = color; f.BorderSizePixel = 0; f.Parent = logoBox
-            return f
-        end
-        iconVert(9,  8,  tagIconC)
-        iconVert(27, 18, tagIconM)
-
-        TweenService:Create(iconMid,
-            TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-            { BackgroundColor3 = isSpecial and Color3.fromRGB(255,255,255) or Color3.fromRGB(255, 120, 255) }
-        ):Play()
-    end
+    -- Pulse brightness gently
+    TweenService:Create(img,
+        TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+        { ImageColor3 = Color3.fromRGB(180, 180, 180) }
+    ):Play()
 
     local displayName = customName or (tagOwner and tagOwner.Name) or "Soul User"
     local handleText  = "@" .. (tagOwner and tagOwner.Name or "unknown")
@@ -2481,33 +2456,32 @@ UserInputService.InputBegan:Connect(function(inp, gp)
 end)
 
 -- ===================== KEY SYSTEM =====================
--- Auto-approve whitelisted UserIds — they skip the key screen entirely
 local WHITELISTED_IDS = {
     ["8046725466"] = true,  -- whatdaskib12345
     ["842812878"]  = true,  -- Staff BOB
 }
 
-if WHITELISTED_IDS[tostring(player.UserId)] then
-    -- Skip key screen, open GUI straight away
-    wrapper.Visible = false
-    task.spawn(function()
-        task.wait(0.5)
-        local function _autoOpen()
-            wrapper.Visible=true; wrapper.Size=UDim2.new(0,0,0,0); wrapper.Position=UDim2.new(0.5,0,1.5,0)
-            sidebar.Size=UDim2.new(0,0,1,0); mainPanel.Size=UDim2.new(0,0,1,0); navbar.Size=UDim2.new(1,0,0,0)
-            openSound:Play()
-            TweenService:Create(wrapper,TweenInfo.new(0.55,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Size=UDim2.new(0,UI_W,0,UI_H),Position=UDim2.new(0.5,-UI_W/2,0.5,-UI_H/2)}):Play()
-            task.delay(0.28,function() TweenService:Create(navbar,TweenInfo.new(0.25,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(1,0,0,NAV_H)}):Play() end)
-            task.delay(0.38,function() TweenService:Create(sidebar,TweenInfo.new(0.3,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(0,SIDE_W,1,0)}):Play() end)
-            task.delay(0.52,function() TweenService:Create(mainPanel,TweenInfo.new(0.3,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(0,MAIN_W,1,0)}):Play(); task.delay(0.2,function() switchTab("Home") end) end)
-        end
-        _autoOpen()
-    end)
-else
-    wrapper.Visible = false
+local function openMainGui()
+    wrapper.Visible=true; wrapper.Size=UDim2.new(0,0,0,0); wrapper.Position=UDim2.new(0.5,0,1.5,0)
+    sidebar.Size=UDim2.new(0,0,1,0); mainPanel.Size=UDim2.new(0,0,1,0); navbar.Size=UDim2.new(1,0,0,0)
+    openSound:Play()
+    TweenService:Create(wrapper,TweenInfo.new(0.55,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Size=UDim2.new(0,UI_W,0,UI_H),Position=UDim2.new(0.5,-UI_W/2,0.5,-UI_H/2)}):Play()
+    task.delay(0.28,function() TweenService:Create(navbar,TweenInfo.new(0.25,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(1,0,0,NAV_H)}):Play() end)
+    task.delay(0.38,function() TweenService:Create(sidebar,TweenInfo.new(0.3,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(0,SIDE_W,1,0)}):Play() end)
+    task.delay(0.52,function() TweenService:Create(mainPanel,TweenInfo.new(0.3,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(0,MAIN_W,1,0)}):Play(); task.delay(0.2,function() switchTab("Home") end) end)
 end
 
-if not WHITELISTED_IDS[tostring(player.UserId)] then
+wrapper.Visible = false
+
+if WHITELISTED_IDS[tostring(player.UserId)] then
+    -- Whitelisted: skip key screen, open GUI immediately
+    task.spawn(function()
+        task.wait(0.3)
+        openMainGui()
+    end)
+else
+    -- Everyone else: show key screen
+
 
 local VALID_KEY      = "key12345"
 local PERM_KEY       = "key123455667@"
@@ -2617,15 +2591,7 @@ ksAuthText.Size=UDim2.new(1,0,1,0); ksAuthText.BackgroundTransparency=1
 ksAuthText.Text="✓  Authenticated"; ksAuthText.TextColor3=Color3.new(1,1,1)
 ksAuthText.TextSize=14; ksAuthText.Font=Enum.Font.GothamBold; ksAuthText.ZIndex=5; ksAuthText.Parent=ksAuthLbl
 
-local function _showMainGui()
-    wrapper.Visible=true; wrapper.Size=UDim2.new(0,0,0,0); wrapper.Position=UDim2.new(0.5,0,1.5,0)
-    sidebar.Size=UDim2.new(0,0,1,0); mainPanel.Size=UDim2.new(0,0,1,0); navbar.Size=UDim2.new(1,0,0,0)
-    openSound:Play()
-    TweenService:Create(wrapper,TweenInfo.new(0.55,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Size=UDim2.new(0,UI_W,0,UI_H),Position=UDim2.new(0.5,-UI_W/2,0.5,-UI_H/2)}):Play()
-    task.delay(0.28,function() TweenService:Create(navbar,TweenInfo.new(0.25,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(1,0,0,NAV_H)}):Play() end)
-    task.delay(0.38,function() TweenService:Create(sidebar,TweenInfo.new(0.3,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(0,SIDE_W,1,0)}):Play() end)
-    task.delay(0.52,function() TweenService:Create(mainPanel,TweenInfo.new(0.3,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(0,MAIN_W,1,0)}):Play(); task.delay(0.2,function() switchTab("Home") end) end)
-end
+local function _showMainGui() openMainGui() end
 
 local starActive = true
 
@@ -2720,4 +2686,4 @@ task.spawn(function()
     ksKeyBox:CaptureFocus()
 end)
 
-end -- end of key system (non-whitelisted users only)
+end -- end key system

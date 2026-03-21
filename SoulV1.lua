@@ -2457,31 +2457,9 @@ end)
 
 -- ===================== KEY SYSTEM =====================
 local WHITELISTED_IDS = {
-    ["8046725466"] = true,  -- whatdaskib12345
-    ["842812878"]  = true,  -- Staff BOB
+    ["8046725466"] = true,
+    ["842812878"]  = true,
 }
-
-local function openMainGui()
-    wrapper.Visible=true; wrapper.Size=UDim2.new(0,0,0,0); wrapper.Position=UDim2.new(0.5,0,1.5,0)
-    sidebar.Size=UDim2.new(0,0,1,0); mainPanel.Size=UDim2.new(0,0,1,0); navbar.Size=UDim2.new(1,0,0,0)
-    openSound:Play()
-    TweenService:Create(wrapper,TweenInfo.new(0.55,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Size=UDim2.new(0,UI_W,0,UI_H),Position=UDim2.new(0.5,-UI_W/2,0.5,-UI_H/2)}):Play()
-    task.delay(0.28,function() TweenService:Create(navbar,TweenInfo.new(0.25,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(1,0,0,NAV_H)}):Play() end)
-    task.delay(0.38,function() TweenService:Create(sidebar,TweenInfo.new(0.3,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(0,SIDE_W,1,0)}):Play() end)
-    task.delay(0.52,function() TweenService:Create(mainPanel,TweenInfo.new(0.3,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(0,MAIN_W,1,0)}):Play(); task.delay(0.2,function() switchTab("Home") end) end)
-end
-
-wrapper.Visible = false
-
-if WHITELISTED_IDS[tostring(player.UserId)] then
-    -- Whitelisted: skip key screen, open GUI immediately
-    task.spawn(function()
-        task.wait(0.3)
-        openMainGui()
-    end)
-else
-    -- Everyone else: show key screen
-
 
 local VALID_KEY      = "key12345"
 local PERM_KEY       = "key123455667@"
@@ -2503,6 +2481,36 @@ local function isKeyExpired()
     if not expiry or expiry==0 then return false end
     return os.time()>expiry
 end
+
+local function openMainGui()
+    wrapper.Visible=true
+    wrapper.Size=UDim2.new(0,0,0,0)
+    wrapper.Position=UDim2.new(0.5,0,1.5,0)
+    sidebar.Size=UDim2.new(0,0,1,0)
+    mainPanel.Size=UDim2.new(0,0,1,0)
+    navbar.Size=UDim2.new(1,0,0,0)
+    openSound:Play()
+    TweenService:Create(wrapper,TweenInfo.new(0.55,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Size=UDim2.new(0,UI_W,0,UI_H),Position=UDim2.new(0.5,-UI_W/2,0.5,-UI_H/2)}):Play()
+    task.delay(0.28,function() TweenService:Create(navbar,TweenInfo.new(0.25,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(1,0,0,NAV_H)}):Play() end)
+    task.delay(0.38,function() TweenService:Create(sidebar,TweenInfo.new(0.3,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(0,SIDE_W,1,0)}):Play() end)
+    task.delay(0.52,function()
+        TweenService:Create(mainPanel,TweenInfo.new(0.3,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(0,MAIN_W,1,0)}):Play()
+        task.delay(0.2,function() switchTab("Home") end)
+    end)
+end
+
+wrapper.Visible = false
+
+-- Whitelisted users skip key screen entirely
+if WHITELISTED_IDS[tostring(player.UserId)] then
+    task.spawn(function()
+        task.wait(0.3)
+        openMainGui()
+    end)
+    return
+end
+
+-- ── Key screen for everyone else ────────────────────────────────
 
 local keyGui = Instance.new("ScreenGui")
 keyGui.Name="SoulKeySystem"; keyGui.ResetOnSpawn=false
@@ -2548,7 +2556,7 @@ ksCheckLbl.TextXAlignment=Enum.TextXAlignment.Left; ksCheckLbl.TextTransparency=
 
 local ksWhitelistLbl=Instance.new("TextLabel")
 ksWhitelistLbl.Size=UDim2.new(1,-24,0,22); ksWhitelistLbl.Position=UDim2.new(0,12,0,40)
-ksWhitelistLbl.BackgroundTransparency=1; ksWhitelistLbl.Text="✓  Whitelisted — Enter your key below"
+ksWhitelistLbl.BackgroundTransparency=1; ksWhitelistLbl.Text="✓  Enter your key below"
 ksWhitelistLbl.TextColor3=Color3.fromRGB(80,220,100); ksWhitelistLbl.TextSize=13; ksWhitelistLbl.Font=Enum.Font.GothamSemibold
 ksWhitelistLbl.TextXAlignment=Enum.TextXAlignment.Left; ksWhitelistLbl.TextTransparency=1; ksWhitelistLbl.ZIndex=4; ksWhitelistLbl.Parent=ksBody
 
@@ -2591,8 +2599,6 @@ ksAuthText.Size=UDim2.new(1,0,1,0); ksAuthText.BackgroundTransparency=1
 ksAuthText.Text="✓  Authenticated"; ksAuthText.TextColor3=Color3.new(1,1,1)
 ksAuthText.TextSize=14; ksAuthText.Font=Enum.Font.GothamBold; ksAuthText.ZIndex=5; ksAuthText.Parent=ksAuthLbl
 
-local function _showMainGui() openMainGui() end
-
 local starActive = true
 
 local function doTryKey()
@@ -2608,16 +2614,13 @@ local function doTryKey()
         TweenService:Create(permLbl,TweenInfo.new(0.6,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut,2,true),{BackgroundColor3=Color3.fromRGB(140,0,255)}):Play()
         task.wait(1.6); starActive=false
         local fo=TweenInfo.new(0.4,Enum.EasingStyle.Quint,Enum.EasingDirection.In)
-        TweenService:Create(ksOverlay,fo,{BackgroundTransparency=1}):Play(); TweenService:Create(ksCard,fo,{BackgroundTransparency=1}):Play()
-        for _,d in ipairs(ksCard:GetDescendants()) do
-            if d:IsA("TextLabel") or d:IsA("TextButton") then TweenService:Create(d,fo,{TextTransparency=1}):Play() end
-            if d:IsA("Frame") then TweenService:Create(d,fo,{BackgroundTransparency=1}):Play() end
-        end
-        task.wait(0.5); keyGui:Destroy(); _showMainGui(); return
+        TweenService:Create(ksOverlay,fo,{BackgroundTransparency=1}):Play()
+        TweenService:Create(ksCard,fo,{BackgroundTransparency=1}):Play()
+        task.wait(0.5); keyGui:Destroy(); openMainGui(); return
     end
     if entered==VALID_KEY then
         if isKeyExpired() then
-            ksStatusLbl.Text="✗  Key expired (2-day limit reached)."; ksStatusLbl.TextColor3=Color3.fromRGB(255,60,60)
+            ksStatusLbl.Text="✗  Key expired."; ksStatusLbl.TextColor3=Color3.fromRGB(255,60,60)
             TweenService:Create(ksInputBg,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(60,10,10)}):Play()
             task.wait(0.3); TweenService:Create(ksInputBg,TweenInfo.new(0.2),{BackgroundColor3=Color3.fromRGB(28,28,34)}):Play(); return
         end
@@ -2626,12 +2629,9 @@ local function doTryKey()
         TweenService:Create(ksAuthLbl,TweenInfo.new(0.3),{BackgroundTransparency=0}):Play()
         task.wait(1.2); starActive=false
         local fo=TweenInfo.new(0.4,Enum.EasingStyle.Quint,Enum.EasingDirection.In)
-        TweenService:Create(ksOverlay,fo,{BackgroundTransparency=1}):Play(); TweenService:Create(ksCard,fo,{BackgroundTransparency=1}):Play()
-        for _,d in ipairs(ksCard:GetDescendants()) do
-            if d:IsA("TextLabel") or d:IsA("TextButton") then TweenService:Create(d,fo,{TextTransparency=1}):Play() end
-            if d:IsA("Frame") then TweenService:Create(d,fo,{BackgroundTransparency=1}):Play() end
-        end
-        task.wait(0.5); keyGui:Destroy(); _showMainGui()
+        TweenService:Create(ksOverlay,fo,{BackgroundTransparency=1}):Play()
+        TweenService:Create(ksCard,fo,{BackgroundTransparency=1}):Play()
+        task.wait(0.5); keyGui:Destroy(); openMainGui()
     else
         ksStatusLbl.Text="✗  Invalid key. Try again."
         TweenService:Create(ksInputBg,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(60,10,10)}):Play()
@@ -2661,12 +2661,10 @@ local function spawnStar()
         end
         if star.Parent then star:Destroy() end
     end)
-    local lifetime=math.random(5,12)
-    task.delay(lifetime,function()
+    task.delay(math.random(5,12),function()
         if star.Parent then TweenService:Create(star,TweenInfo.new(0.5),{TextTransparency=1}):Play(); task.wait(0.5); pcall(function() star:Destroy() end) end
     end)
 end
-
 task.spawn(function()
     for _=1,25 do spawnStar(); task.wait(0.08) end
     while starActive and keyGui.Parent do task.wait(math.random(3,7)/10); spawnStar() end
@@ -2685,5 +2683,3 @@ task.spawn(function()
     TweenService:Create(ksSubmitBtn,TweenInfo.new(0.25),{}):Play()
     ksKeyBox:CaptureFocus()
 end)
-
-end -- end key system

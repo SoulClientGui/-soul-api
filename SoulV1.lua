@@ -32,9 +32,9 @@ local SPECIAL_STYLES = {
 
 local function fetchNametag(targetPlayer, callback)
     local tag = CUSTOM_TAGS[tostring(targetPlayer.UserId)]
-    if not tag then return end  -- not in list = no tag shown
-    callback(tag)
+    callback(tag or "Soul User")
 end
+
 
 local function getStyle(targetPlayer)
     return SPECIAL_STYLES[tostring(targetPlayer and targetPlayer.UserId)] or "default"
@@ -400,33 +400,28 @@ local function attachTag(character, tagOwner, customName)
 end
 
 -- ===================== NAMETAGS — ALL PLAYERS =====================
--- Tags only show on injectors and people in CUSTOM_TAGS.
--- Uses a hidden BillboardGui marker on the Head to signal injection.
--- BillboardGui created from LocalScript replicates to the SERVER,
--- and the server then replicates it back to ALL other clients.
--- This is the standard executor trick — no ServerScript needed.
+-- ===================== NAMETAG SYSTEM =====================
+-- Own tag: always shown when you inject
+-- Others:  shown if they are in CUSTOM_TAGS OR have injected (SoulV1Tag marker on Head)
 
 local MARKER = "SoulV1Tag"
 
--- Plant our own marker — fires from LocalScript, replicates via server
+-- Plant invisible marker on our own Head so others can detect us
 local function plantMarker(char)
     task.spawn(function()
         local head = char:WaitForChild("Head", 10)
         if not head then return end
         if head:FindFirstChild(MARKER) then return end
-        -- Use a Part or BillboardGui — BillboardGui replicates when parented to character
-        local marker = Instance.new("BillboardGui")
-        marker.Name          = MARKER
-        marker.Size          = UDim2.new(0, 0, 0, 0)
-        marker.MaxDistance   = 0
-        marker.Enabled       = false
-        marker.AlwaysOnTop   = false
-        marker.ResetOnSpawn  = false
-        marker.Parent        = head
+        local m = Instance.new("BillboardGui")
+        m.Name         = MARKER
+        m.Size         = UDim2.new(0, 0, 0, 0)
+        m.Enabled      = false
+        m.ResetOnSpawn = false
+        m.Parent       = head
     end)
 end
 
--- Show our own tag always
+-- Always show our own tag
 local function showOwnTag(char)
     task.spawn(function()
         local head = char:WaitForChild("Head", 10)
@@ -446,19 +441,7 @@ player.CharacterAdded:Connect(function(char)
     showOwnTag(char)
 end)
 
--- Returns true if this player should have a tag shown above them
-local function shouldTag(p, char)
-    -- Always show for known IDs
-    if CUSTOM_TAGS[tostring(p.UserId)] then return true end
-    -- Show if they have our injector marker on their head
-    if char then
-        local head = char:FindFirstChild("Head")
-        if head and head:FindFirstChild(MARKER) then return true end
-    end
-    return false
-end
-
--- Watch another player — tag them only if they injected or are a known ID
+-- Watch other players — only tag if they injected or are a known ID
 local function watchPlayer(p)
     if p == player then return end
 
@@ -468,15 +451,26 @@ local function watchPlayer(p)
             if not head then return end
 
             local function tryApply()
-                fetchNametag(p, function(nametag)
-                    attachTag(char, p, nametag)
-                end)
+                -- Only show "Soul User" for injectors, full tag for known IDs
+                local tag = CUSTOM_TAGS[tostring(p.UserId)]
+                if tag then
+                    attachTag(char, p, tag)
+                else
+                    attachTag(char, p, "Soul User")
+                end
             end
 
-            -- Already qualifies
-            if shouldTag(p, char) then tryApply(); return end
+            -- Known ID — always tag regardless of marker
+            if CUSTOM_TAGS[tostring(p.UserId)] then
+                tryApply(); return
+            end
 
-            -- Wait for marker to appear (they inject after us)
+            -- Already has the marker
+            if head:FindFirstChild(MARKER) then
+                tryApply(); return
+            end
+
+            -- Wait for marker to appear when they inject
             local conn
             conn = head.ChildAdded:Connect(function(child)
                 if child.Name == MARKER then
@@ -484,7 +478,6 @@ local function watchPlayer(p)
                     tryApply()
                 end
             end)
-            -- Clean up on leave
             char.AncestryChanged:Connect(function()
                 if not char.Parent then
                     pcall(function() conn:Disconnect() end)

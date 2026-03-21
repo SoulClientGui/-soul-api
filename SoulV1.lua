@@ -1,5 +1,5 @@
 -- Soul V1 | Bloodshot Red | Onyx-style Layout
--- Nametag system backed by Soul's API (custom names saved server-side)
+-- If this doesn't load, check your executor console for errors
 
 local Players          = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -18,16 +18,21 @@ local NAMETAG_OWNER = "whatdaskib12345" -- only this username can use ;setnameta
 -- Custom nametags by UserId — add more as needed
 local CUSTOM_TAGS = {
     ["8046725466"] = "soul NIGGA",  -- whatdaskib12345
-    ["842812878"]  = "BOB staff",   -- BOB staff member
+    ["842812878"]  = "Staff BOB",   -- Staff BOB
 }
 
 -- Special visual styles per UserId
 -- "owner"   = black bg, white glowing text, intense white glitch
--- "rainbow" = black bg, rainbow cycling text, red floating glitch
+-- "staffbob"= black bg, white flashing text, custom image logo, bw theme
 -- "default" = purple bg, purple text, standard purple glitch
 local SPECIAL_STYLES = {
     ["8046725466"] = "owner",
-    ["842812878"]  = "rainbow",
+    ["842812878"]  = "staffbob",
+}
+
+-- Image asset IDs for logo boxes (replace 0 with actual Roblox asset ID)
+local LOGO_IMAGES = {
+    ["842812878"] = "rbxassetid://95353044120098", -- Staff BOB photo
 }
 
 local function fetchNametag(targetPlayer, callback)
@@ -38,6 +43,10 @@ end
 
 local function getStyle(targetPlayer)
     return SPECIAL_STYLES[tostring(targetPlayer and targetPlayer.UserId)] or "default"
+end
+
+local function getLogoImage(targetPlayer)
+    return LOGO_IMAGES[tostring(targetPlayer and targetPlayer.UserId)]
 end
 
 local function registerNametag(targetPlayer, nametagText)
@@ -109,9 +118,11 @@ local function attachTag(character, tagOwner, customName)
     if existing then existing:Destroy() end
 
     -- Work out which style this player gets
-    local style = getStyle(tagOwner)  -- "owner" | "rainbow" | "default"
+    local style = getStyle(tagOwner)  -- "owner" | "staffbob" | "default"
+    local logoImage = getLogoImage(tagOwner)
 
     -- ── Palettes ──────────────────────────────────────────────────
+    -- owner: black bg, white glow
     local OWN_BG       = Color3.fromRGB(5,   5,   5)
     local OWN_LOGO     = Color3.fromRGB(15,  15,  15)
     local OWN_STROKE   = Color3.fromRGB(255, 255, 255)
@@ -120,14 +131,14 @@ local function attachTag(character, tagOwner, customName)
     local OWN_HANDLE   = Color3.fromRGB(180, 180, 180)
     local OWN_ICON     = Color3.fromRGB(200, 200, 200)
 
-    -- Rainbow style (BOB staff): black bg, rainbow text, red glitch
+    -- staffbob: black bg, white text, white border, bw everything
     local BOB_BG       = Color3.fromRGB(5,   5,   5)
-    local BOB_LOGO     = Color3.fromRGB(15,  15,  15)
-    local BOB_STROKE   = Color3.fromRGB(255, 30,  30)   -- red border
-    local BOB_GLOW     = Color3.fromRGB(255, 60,  60)   -- red glow ring
-    local BOB_TEXT     = Color3.fromRGB(255, 50,  50)   -- starts red, cycles rainbow
-    local BOB_HANDLE   = Color3.fromRGB(200, 80,  80)
-    local BOB_ICON     = Color3.fromRGB(255, 60,  60)
+    local BOB_LOGO     = Color3.fromRGB(20,  20,  20)
+    local BOB_STROKE   = Color3.fromRGB(255, 255, 255)
+    local BOB_GLOW     = Color3.fromRGB(200, 200, 200)
+    local BOB_TEXT     = Color3.fromRGB(255, 255, 255)
+    local BOB_HANDLE   = Color3.fromRGB(160, 160, 160)
+    local BOB_ICON     = Color3.fromRGB(220, 220, 220)
 
     local PURPLE_BRIGHT = Color3.fromRGB(180, 0, 255)
     local PURPLE_GLOW   = Color3.fromRGB(210, 80, 255)
@@ -135,14 +146,15 @@ local function attachTag(character, tagOwner, customName)
     local PURPLE_BG     = Color3.fromRGB(20, 5, 30)
     local PURPLE_LOGO   = Color3.fromRGB(35, 10, 50)
 
-    local tagBG      = (style=="owner" or style=="rainbow") and OWN_BG      or PURPLE_BG
-    local tagLogo    = (style=="owner" or style=="rainbow") and OWN_LOGO     or PURPLE_LOGO
-    local tagStrokeC = style=="owner" and OWN_STROKE  or style=="rainbow" and BOB_STROKE  or PURPLE_BRIGHT
-    local tagGlowC   = style=="owner" and OWN_GLOW    or style=="rainbow" and BOB_GLOW    or PURPLE_GLOW
-    local tagTextC   = style=="owner" and OWN_TEXT    or style=="rainbow" and BOB_TEXT    or PURPLE_GLOW
-    local tagHandleC = style=="owner" and OWN_HANDLE  or style=="rainbow" and BOB_HANDLE  or PURPLE_DIM
-    local tagIconC   = style=="owner" and OWN_ICON    or style=="rainbow" and BOB_ICON    or PURPLE_GLOW
-    local tagIconM   = style=="owner" and OWN_ICON    or style=="rainbow" and BOB_ICON    or PURPLE_BRIGHT
+    local isSpecial  = (style == "owner" or style == "staffbob")
+    local tagBG      = isSpecial and OWN_BG     or PURPLE_BG
+    local tagLogo    = isSpecial and OWN_LOGO   or PURPLE_LOGO
+    local tagStrokeC = style=="owner" and OWN_STROKE or style=="staffbob" and BOB_STROKE or PURPLE_BRIGHT
+    local tagGlowC   = style=="owner" and OWN_GLOW   or style=="staffbob" and BOB_GLOW   or PURPLE_GLOW
+    local tagTextC   = style=="owner" and OWN_TEXT   or style=="staffbob" and BOB_TEXT   or PURPLE_GLOW
+    local tagHandleC = style=="owner" and OWN_HANDLE or style=="staffbob" and BOB_HANDLE or PURPLE_DIM
+    local tagIconC   = style=="owner" and OWN_ICON   or style=="staffbob" and BOB_ICON   or PURPLE_GLOW
+    local tagIconM   = style=="owner" and OWN_ICON   or style=="staffbob" and BOB_ICON   or PURPLE_BRIGHT
 
     local billboard = Instance.new("BillboardGui")
     billboard.Name             = "SoulBillboard"
@@ -176,39 +188,60 @@ local function attachTag(character, tagOwner, customName)
     glowRing.Parent = tag
     Instance.new("UICorner", glowRing).CornerRadius = UDim.new(0, 32)
     local glowStroke = Instance.new("UIStroke", glowRing)
-    glowStroke.Color = tagGlowC; glowStroke.Thickness = (style=="owner" or style=="rainbow") and 6 or 4; glowStroke.Transparency = 1
+    glowStroke.Color = tagGlowC; glowStroke.Thickness = (style=="owner" or style=="staffbob") and 6 or 4; glowStroke.Transparency = 1
 
-    -- Logo box
+    -- Logo box — photo for staffbob, S icon for everyone else
     local logoBox = Instance.new("Frame")
     logoBox.Size = UDim2.new(0, 40, 0, 40); logoBox.Position = UDim2.new(0, 8, 0.5, -20)
     logoBox.BackgroundColor3 = tagLogo; logoBox.BackgroundTransparency = 1
     logoBox.Parent = tag
     Instance.new("UICorner", logoBox).CornerRadius = UDim.new(0, 10)
 
-    local function iconBar(py, color)
-        local f = Instance.new("Frame")
-        f.Size = UDim2.new(0, 22, 0, 4); f.Position = UDim2.new(0, 9, 0, py)
-        f.BackgroundColor3 = color; f.BorderSizePixel = 0; f.Parent = logoBox
-        Instance.new("UICorner", f).CornerRadius = UDim.new(0, 2)
-        return f
-    end
-    iconBar(8,  tagIconC)
-    local iconMid = iconBar(18, tagIconM)
-    iconBar(28, tagIconC)
+    local iconMid
 
-    local function iconVert(px, py, color)
-        local f = Instance.new("Frame")
-        f.Size = UDim2.new(0, 4, 0, 14); f.Position = UDim2.new(0, px, 0, py)
-        f.BackgroundColor3 = color; f.BorderSizePixel = 0; f.Parent = logoBox
-        return f
-    end
-    iconVert(9,  8,  tagIconC)
-    iconVert(27, 18, tagIconM)
+    if style == "staffbob" and logoImage and logoImage ~= "rbxassetid://0" then
+        -- Photo logo for Staff BOB
+        logoBox.BackgroundTransparency = 0
+        logoBox.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+        local img = Instance.new("ImageLabel")
+        img.Size = UDim2.new(1, 0, 1, 0)
+        img.BackgroundTransparency = 1
+        img.Image = logoImage
+        img.ScaleType = Enum.ScaleType.Crop
+        img.ImageColor3 = Color3.new(1, 1, 1)
+        img.Parent = logoBox
+        -- Pulse the image brightness for effect
+        iconMid = img
+        TweenService:Create(img,
+            TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+            { ImageColor3 = Color3.fromRGB(180, 180, 180) }
+        ):Play()
+    else
+        local function iconBar(py, color)
+            local f = Instance.new("Frame")
+            f.Size = UDim2.new(0, 22, 0, 4); f.Position = UDim2.new(0, 9, 0, py)
+            f.BackgroundColor3 = color; f.BorderSizePixel = 0; f.Parent = logoBox
+            Instance.new("UICorner", f).CornerRadius = UDim.new(0, 2)
+            return f
+        end
+        iconBar(8,  tagIconC)
+        iconMid = iconBar(18, tagIconM)
+        iconBar(28, tagIconC)
 
-    TweenService:Create(iconMid,
-        TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-        { BackgroundColor3 = style=="owner" and Color3.fromRGB(255,255,255) or style=="rainbow" and Color3.fromRGB(255,80,80) or Color3.fromRGB(255, 120, 255) }
-    ):Play()
+        local function iconVert(px, py, color)
+            local f = Instance.new("Frame")
+            f.Size = UDim2.new(0, 4, 0, 14); f.Position = UDim2.new(0, px, 0, py)
+            f.BackgroundColor3 = color; f.BorderSizePixel = 0; f.Parent = logoBox
+            return f
+        end
+        iconVert(9,  8,  tagIconC)
+        iconVert(27, 18, tagIconM)
+
+        TweenService:Create(iconMid,
+            TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+            { BackgroundColor3 = isSpecial and Color3.fromRGB(255,255,255) or Color3.fromRGB(255, 120, 255) }
+        ):Play()
+    end
 
     local displayName = customName or (tagOwner and tagOwner.Name) or "Soul User"
     local handleText  = "@" .. (tagOwner and tagOwner.Name or "unknown")
@@ -223,13 +256,13 @@ local function attachTag(character, tagOwner, customName)
     nameLabel.TextSize = 15; nameLabel.Font = Enum.Font.GothamBold
     nameLabel.TextXAlignment = Enum.TextXAlignment.Left; nameLabel.Parent = tag
 
-    -- Owner gets white text glow, rainbow gets red text glow
+    -- Owner gets white text glow, staffbob gets white text glow
     if style == "owner" then
         local ts = Instance.new("UIStroke", nameLabel)
         ts.Color = Color3.fromRGB(255, 255, 255); ts.Thickness = 1.5; ts.Transparency = 0.3
-    elseif style == "rainbow" then
+    elseif style == "staffbob" then
         local ts = Instance.new("UIStroke", nameLabel)
-        ts.Color = Color3.fromRGB(255, 30, 30); ts.Thickness = 2; ts.Transparency = 0.2
+        ts.Color = Color3.fromRGB(255, 255, 255); ts.Thickness = 2; ts.Transparency = 0.2
     end
 
     local handleLabel = Instance.new("TextLabel")
@@ -270,23 +303,14 @@ local function attachTag(character, tagOwner, customName)
         end
     end)
 
-    -- Glitch — three styles: owner white, rainbow red, default purple
+    -- Glitch — three styles: owner white, staffbob white flash, default purple
     local function startGlitch()
         local FLASH = Color3.fromRGB(255, 255, 255)
         local RED   = Color3.fromRGB(255, 30,  30)
         local fastEnd = tick() + 2
 
         -- Rainbow colour cycle for BOB staff name label
-        local RAINBOW = {
-            Color3.fromRGB(255, 0,   0),
-            Color3.fromRGB(255, 127, 0),
-            Color3.fromRGB(255, 255, 0),
-            Color3.fromRGB(0,   255, 0),
-            Color3.fromRGB(0,   180, 255),
-            Color3.fromRGB(100, 0,   255),
-            Color3.fromRGB(255, 0,   200),
-        }
-        local rainbowIdx = 1
+
 
         task.spawn(function()
             if style == "owner" then
@@ -319,37 +343,41 @@ local function attachTag(character, tagOwner, customName)
                     TweenService:Create(glowStroke, TweenInfo.new(0.3),  { Transparency = 0.3 }):Play()
                 end
 
-            elseif style == "rainbow" then
-                -- ── Rainbow: cycling colour + red glitch ──────────────
-                -- Fast initial red glitch burst
+            elseif style == "staffbob" then
+                -- ── Staff BOB: white flashing text, bw glitch ─────────
+                -- Fast initial white flash burst on spawn
                 while tick() < fastEnd and nameLabel.Parent do
-                    nameLabel.TextColor3 = RED;                         task.wait(0.02)
-                    nameLabel.TextColor3 = Color3.fromRGB(180,0,0);     task.wait(0.02)
-                    nameLabel.TextColor3 = Color3.fromRGB(0,0,0);       task.wait(0.015)
-                    nameLabel.TextColor3 = RED;                         task.wait(0.03)
-                    tagStroke.Color = Color3.fromRGB(0,0,0);            task.wait(0.02)
+                    nameLabel.TextColor3 = FLASH;                        task.wait(0.02)
+                    nameLabel.TextColor3 = Color3.fromRGB(80,80,80);     task.wait(0.02)
+                    nameLabel.TextColor3 = Color3.fromRGB(0,0,0);        task.wait(0.015)
+                    nameLabel.TextColor3 = FLASH;                        task.wait(0.025)
+                    tagStroke.Color = Color3.fromRGB(0,0,0);             task.wait(0.02)
                     tagStroke.Color = BOB_STROKE
                 end
-                -- Continuous slow rainbow cycle on the name
+                nameLabel.TextColor3 = BOB_TEXT
+                tagStroke.Color = BOB_STROKE
+                -- Continuous white flash cycle — text pulses white → grey → white
                 task.spawn(function()
                     while nameLabel.Parent do
-                        rainbowIdx = (rainbowIdx % #RAINBOW) + 1
-                        TweenService:Create(nameLabel, TweenInfo.new(0.18, Enum.EasingStyle.Linear),
-                            { TextColor3 = RAINBOW[rainbowIdx] }):Play()
-                        task.wait(0.18)
+                        TweenService:Create(nameLabel, TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                            { TextColor3 = Color3.fromRGB(140,140,140) }):Play()
+                        task.wait(0.4)
+                        TweenService:Create(nameLabel, TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                            { TextColor3 = FLASH }):Play()
+                        task.wait(0.4)
                     end
                 end)
-                -- Ongoing random red glitch interrupts the rainbow
+                -- Ongoing random hard white glitch interrupts the pulse
                 while nameLabel.Parent do
-                    task.wait(math.random(10, 30) / 10)
+                    task.wait(math.random(8, 25) / 10)
                     if not nameLabel.Parent then break end
-                    -- Red glitch flash
-                    for _ = 1, math.random(2, 5) do
-                        nameLabel.TextColor3 = RED;                      task.wait(0.04)
-                        nameLabel.TextColor3 = Color3.fromRGB(0,0,0);   task.wait(0.03)
-                        nameLabel.TextColor3 = RED;                      task.wait(0.03)
+                    for _ = 1, math.random(3, 7) do
+                        nameLabel.TextColor3 = FLASH;                    task.wait(0.03)
+                        nameLabel.TextColor3 = Color3.fromRGB(0,0,0);   task.wait(0.025)
+                        nameLabel.TextColor3 = FLASH;                    task.wait(0.02)
                     end
-                    -- Red border flicker
+                    nameLabel.TextColor3 = BOB_TEXT
+                    -- White border flicker
                     TweenService:Create(tagStroke, TweenInfo.new(0.04), { Color = Color3.fromRGB(0,0,0) }):Play()
                     task.wait(0.06)
                     TweenService:Create(tagStroke, TweenInfo.new(0.15), { Color = BOB_STROKE }):Play()
@@ -392,7 +420,7 @@ local function attachTag(character, tagOwner, customName)
     local fi = TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
     TweenService:Create(tag,         fi, { BackgroundTransparency = 0 }):Play()
     TweenService:Create(tagStroke,   fi, { Transparency = 0 }):Play()
-    TweenService:Create(glowStroke,  fi, { Transparency = (style=="owner" or style=="rainbow") and 0.3 or 0.6 }):Play()
+    TweenService:Create(glowStroke,  fi, { Transparency = (style=="owner" or style=="staffbob") and 0.3 or 0.6 }):Play()
     TweenService:Create(logoBox,     fi, { BackgroundTransparency = 0 }):Play()
     TweenService:Create(nameLabel,   fi, { TextTransparency = 0 }):Play()
     TweenService:Create(handleLabel, fi, { TextTransparency = 0 }):Play()
@@ -1379,9 +1407,19 @@ makeToggle(combatPage, "Aimlock", 280,
         local AIMLOCK_SMOOTH = 0.15
         local AimlockEnabled = false
         local SilentEnabled = false
-        local fovCircle = Drawing.new("Circle")
-        fovCircle.Thickness = 2; fovCircle.NumSides = 100; fovCircle.Radius = FOV_RADIUS
-        fovCircle.Filled = false; fovCircle.Transparency = 0.65; fovCircle.Visible = false
+        -- Safe Drawing.new — not all executors support it
+        local fovCircle = nil
+        if typeof(Drawing) ~= "nil" then
+            pcall(function()
+                fovCircle = Drawing.new("Circle")
+                fovCircle.Thickness = 2; fovCircle.NumSides = 100; fovCircle.Radius = FOV_RADIUS
+                fovCircle.Filled = false; fovCircle.Transparency = 0.65; fovCircle.Visible = false
+            end)
+        end
+        if not fovCircle then
+            -- Fallback stub so nothing crashes if Drawing isn't available
+            fovCircle = { Visible=false, Position=Vector2.new(0,0), Radius=FOV_RADIUS, Color=Color3.new(1,0,0), Remove=function() end }
+        end
         local aimGui = Instance.new("ScreenGui")
         aimGui.Name = "AimGUI"; aimGui.ResetOnSpawn = false
         aimGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling; aimGui.DisplayOrder = 25; aimGui.Parent = player.PlayerGui
@@ -1405,7 +1443,7 @@ makeToggle(combatPage, "Aimlock", 280,
         closeBtn.BackgroundColor3 = Color3.fromRGB(139, 0, 0); closeBtn.Text = "✕"
         closeBtn.TextColor3 = Color3.new(1,1,1); closeBtn.TextSize = 14; closeBtn.Font = Enum.Font.GothamBold; closeBtn.Parent = titleBar
         Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
-        closeBtn.MouseButton1Click:Connect(function() pcall(function() fovCircle:Remove() end); aimGui:Destroy() end)
+        closeBtn.MouseButton1Click:Connect(function() pcall(function() if fovCircle and fovCircle.Remove then fovCircle:Remove() end end); aimGui:Destroy() end)
         local content = Instance.new("ScrollingFrame")
         content.Size = UDim2.new(1, -20, 1, -50); content.Position = UDim2.new(0, 10, 0, 50)
         content.BackgroundTransparency = 1; content.BorderSizePixel = 0
@@ -1494,7 +1532,7 @@ makeToggle(combatPage, "Aimlock", 280,
             else fovCircle.Visible = false end
         end)
         aimGui.AncestryChanged:Connect(function()
-            if not aimGui.Parent then aimConn:Disconnect(); pcall(function() fovCircle:Remove() end) end
+            if not aimGui.Parent then aimConn:Disconnect(); pcall(function() if fovCircle and fovCircle.Remove then fovCircle:Remove() end end) end
         end)
         local dragging2, dragStart2, dragPos2 = false, nil, nil
         titleBar.InputBegan:Connect(function(inp)

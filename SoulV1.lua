@@ -32,7 +32,8 @@ local SPECIAL_STYLES = {
 
 local function fetchNametag(targetPlayer, callback)
     local tag = CUSTOM_TAGS[tostring(targetPlayer.UserId)]
-    callback(tag or "Soul User")
+    if not tag then return end  -- not in list = no tag shown
+    callback(tag)
 end
 
 local function getStyle(targetPlayer)

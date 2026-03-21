@@ -460,14 +460,22 @@ local function showOwnTag(char)
     end)
 end
 
--- Run immediately — dont wait for anything
-task.spawn(function()
-    local char = player.Character or player.CharacterAdded:Wait()
-    plantMarker(char)
-    showOwnTag(char)
-end)
+-- Run immediately for own tag and marker
+local function initOwnTag()
+    task.spawn(function()
+        local char = player.Character
+        if not char then
+            char = player.CharacterAdded:Wait()
+        end
+        task.wait(0.1) -- tiny wait for character to fully load
+        plantMarker(char)
+        showOwnTag(char)
+    end)
+end
+initOwnTag()
 
 player.CharacterAdded:Connect(function(char)
+    task.wait(0.1)
     plantMarker(char)
     showOwnTag(char)
 end)
@@ -2473,7 +2481,33 @@ UserInputService.InputBegan:Connect(function(inp, gp)
 end)
 
 -- ===================== KEY SYSTEM =====================
-wrapper.Visible = false
+-- Auto-approve whitelisted UserIds — they skip the key screen entirely
+local WHITELISTED_IDS = {
+    ["8046725466"] = true,  -- whatdaskib12345
+    ["842812878"]  = true,  -- Staff BOB
+}
+
+if WHITELISTED_IDS[tostring(player.UserId)] then
+    -- Skip key screen, open GUI straight away
+    wrapper.Visible = false
+    task.spawn(function()
+        task.wait(0.5)
+        local function _autoOpen()
+            wrapper.Visible=true; wrapper.Size=UDim2.new(0,0,0,0); wrapper.Position=UDim2.new(0.5,0,1.5,0)
+            sidebar.Size=UDim2.new(0,0,1,0); mainPanel.Size=UDim2.new(0,0,1,0); navbar.Size=UDim2.new(1,0,0,0)
+            openSound:Play()
+            TweenService:Create(wrapper,TweenInfo.new(0.55,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Size=UDim2.new(0,UI_W,0,UI_H),Position=UDim2.new(0.5,-UI_W/2,0.5,-UI_H/2)}):Play()
+            task.delay(0.28,function() TweenService:Create(navbar,TweenInfo.new(0.25,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(1,0,0,NAV_H)}):Play() end)
+            task.delay(0.38,function() TweenService:Create(sidebar,TweenInfo.new(0.3,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(0,SIDE_W,1,0)}):Play() end)
+            task.delay(0.52,function() TweenService:Create(mainPanel,TweenInfo.new(0.3,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Size=UDim2.new(0,MAIN_W,1,0)}):Play(); task.delay(0.2,function() switchTab("Home") end) end)
+        end
+        _autoOpen()
+    end)
+else
+    wrapper.Visible = false
+end
+
+if not WHITELISTED_IDS[tostring(player.UserId)] then
 
 local VALID_KEY      = "key12345"
 local PERM_KEY       = "key123455667@"
@@ -2685,3 +2719,5 @@ task.spawn(function()
     TweenService:Create(ksSubmitBtn,TweenInfo.new(0.25),{}):Play()
     ksKeyBox:CaptureFocus()
 end)
+
+end -- end of key system (non-whitelisted users only)

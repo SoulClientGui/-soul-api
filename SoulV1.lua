@@ -6,50 +6,27 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService     = game:GetService("TweenService")
 local RunService       = game:GetService("RunService")
 local SoundService     = game:GetService("SoundService")
-local HttpService      = game:GetService("HttpService")
 local Workspace        = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local camera = Workspace.CurrentCamera
 local gui    = player:WaitForChild("PlayerGui")
 
--- ===================== API CONFIG =====================
--- Deploy webhook: https://api.render.com/deploy/srv-d6v5r675gffc73d4mfjg?key=XU9pCZrrTBg
-local API_URL = "https://discerning-cat.onrender.com"
-local API_KEY = "key123455667@"
-local NAMETAG_OWNER = "whatdaskib12345" -- only this Roblox username can change tags
+-- ===================== NAMETAG CONFIG =====================
+local NAMETAG_OWNER = "whatdaskib12345" -- only this username can use ;setnametag
 
--- Fetch a player's custom nametag from the server (async, calls callback with result)
+-- Custom nametags by UserId — add more as needed
+local CUSTOM_TAGS = {
+    ["8046725466"] = "soul NIGGA", -- whatdaskib12345
+}
+
 local function fetchNametag(targetPlayer, callback)
-    task.spawn(function()
-        local success, result = pcall(function()
-            local response = HttpService:GetAsync(API_URL .. "/nametag/" .. tostring(targetPlayer.UserId))
-            local data = HttpService:JSONDecode(response)
-            return data.nametag
-        end)
-        if success and result and result ~= "Unknown" then
-            callback(result)
-        else
-            callback(targetPlayer.Name)
-        end
-    end)
+    local tag = CUSTOM_TAGS[tostring(targetPlayer.UserId)]
+    callback(tag or targetPlayer.Name)
 end
 
--- Register / update a player's nametag on the server
 local function registerNametag(targetPlayer, nametagText)
-    task.spawn(function()
-        pcall(function()
-            HttpService:PostAsync(
-                API_URL .. "/nametag",
-                HttpService:JSONEncode({
-                    userId  = tostring(targetPlayer.UserId),
-                    nametag = nametagText,
-                    key     = API_KEY
-                }),
-                Enum.HttpContentType.ApplicationJson
-            )
-        end)
-    end)
+    CUSTOM_TAGS[tostring(targetPlayer.UserId)] = nametagText
 end
 
 -- ===================== CAMERA =====================
@@ -2161,16 +2138,14 @@ local actions = {
             showNotif("Usage: ;setnametag name tag", false)
             return
         end
-        -- args format: "targetName customTag"  e.g. ";setnametag Bob CoolGuy"
         local targetName, newTag = args:match("^(%S+)%s+(.+)$")
         if not targetName or not newTag then
             -- no space = set your own tag
             registerNametag(player, args)
-            showNotif("Your tag set: " .. args, true)
+            showNotif("Your tag: " .. args, true)
             if player.Character then attachTag(player.Character, player, args) end
             return
         end
-        -- Find the target player in the server
         local target = nil
         for _, p in ipairs(Players:GetPlayers()) do
             if p.Name:lower() == targetName:lower() then target = p; break end
@@ -2181,7 +2156,6 @@ local actions = {
         end
         registerNametag(target, newTag)
         showNotif(targetName .. " tag: " .. newTag, true)
-        -- Refresh their tag visually if their character is present
         if target.Character then attachTag(target.Character, target, newTag) end
     end,
 }

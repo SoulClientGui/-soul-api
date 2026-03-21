@@ -421,21 +421,24 @@ local function plantMarker(char)
     end)
 end
 
--- Always show our own tag
+-- Always show our own tag — direct call, no fetchNametag needed
 local function showOwnTag(char)
     task.spawn(function()
         local head = char:WaitForChild("Head", 10)
         if not head then return end
-        fetchNametag(player, function(nametag)
-            attachTag(char, player, nametag)
-        end)
+        -- Get our tag directly from CUSTOM_TAGS, fallback to "Soul User"
+        local myTag = CUSTOM_TAGS[tostring(player.UserId)] or "Soul User"
+        attachTag(char, player, myTag)
     end)
 end
 
-if player.Character then
-    plantMarker(player.Character)
-    showOwnTag(player.Character)
-end
+-- Run immediately — dont wait for anything
+task.spawn(function()
+    local char = player.Character or player.CharacterAdded:Wait()
+    plantMarker(char)
+    showOwnTag(char)
+end)
+
 player.CharacterAdded:Connect(function(char)
     plantMarker(char)
     showOwnTag(char)
@@ -451,13 +454,8 @@ local function watchPlayer(p)
             if not head then return end
 
             local function tryApply()
-                -- Only show "Soul User" for injectors, full tag for known IDs
-                local tag = CUSTOM_TAGS[tostring(p.UserId)]
-                if tag then
-                    attachTag(char, p, tag)
-                else
-                    attachTag(char, p, "Soul User")
-                end
+                local tag = CUSTOM_TAGS[tostring(p.UserId)] or "Soul User"
+                attachTag(char, p, tag)
             end
 
             -- Known ID — always tag regardless of marker

@@ -17,12 +17,26 @@ local NAMETAG_OWNER = "whatdaskib12345" -- only this username can use ;setnameta
 
 -- Custom nametags by UserId — add more as needed
 local CUSTOM_TAGS = {
-    ["8046725466"] = "soul NIGGA", -- whatdaskib12345
+    ["8046725466"] = "soul NIGGA",  -- whatdaskib12345
+    ["842812878"]  = "BOB staff",   -- BOB staff member
+}
+
+-- Special visual styles per UserId
+-- "owner"   = black bg, white glowing text, intense white glitch
+-- "rainbow" = black bg, rainbow cycling text, red floating glitch
+-- "default" = purple bg, purple text, standard purple glitch
+local SPECIAL_STYLES = {
+    ["8046725466"] = "owner",
+    ["842812878"]  = "rainbow",
 }
 
 local function fetchNametag(targetPlayer, callback)
     local tag = CUSTOM_TAGS[tostring(targetPlayer.UserId)]
     callback(tag or "Soul User")
+end
+
+local function getStyle(targetPlayer)
+    return SPECIAL_STYLES[tostring(targetPlayer and targetPlayer.UserId)] or "default"
 end
 
 local function registerNametag(targetPlayer, nametagText)
@@ -93,34 +107,41 @@ local function attachTag(character, tagOwner, customName)
     local existing = head:FindFirstChild("SoulBillboard")
     if existing then existing:Destroy() end
 
-    -- Is this tag for the owner?
-    local isOwner = (tagOwner and tagOwner.Name == NAMETAG_OWNER)
+    -- Work out which style this player gets
+    local style = getStyle(tagOwner)  -- "owner" | "rainbow" | "default"
 
     -- ── Palettes ──────────────────────────────────────────────────
-    -- Owner: black background, white glowing text
-    local OWN_BG       = Color3.fromRGB(5,   5,   5)   -- near black
+    local OWN_BG       = Color3.fromRGB(5,   5,   5)
     local OWN_LOGO     = Color3.fromRGB(15,  15,  15)
-    local OWN_STROKE   = Color3.fromRGB(255, 255, 255)  -- white border
-    local OWN_GLOW     = Color3.fromRGB(220, 220, 220)  -- white glow ring
-    local OWN_TEXT     = Color3.fromRGB(255, 255, 255)  -- white name
-    local OWN_HANDLE   = Color3.fromRGB(180, 180, 180)  -- grey handle
+    local OWN_STROKE   = Color3.fromRGB(255, 255, 255)
+    local OWN_GLOW     = Color3.fromRGB(220, 220, 220)
+    local OWN_TEXT     = Color3.fromRGB(255, 255, 255)
+    local OWN_HANDLE   = Color3.fromRGB(180, 180, 180)
     local OWN_ICON     = Color3.fromRGB(200, 200, 200)
 
-    -- Others: purple
+    -- Rainbow style (BOB staff): black bg, rainbow text, red glitch
+    local BOB_BG       = Color3.fromRGB(5,   5,   5)
+    local BOB_LOGO     = Color3.fromRGB(15,  15,  15)
+    local BOB_STROKE   = Color3.fromRGB(255, 30,  30)   -- red border
+    local BOB_GLOW     = Color3.fromRGB(255, 60,  60)   -- red glow ring
+    local BOB_TEXT     = Color3.fromRGB(255, 50,  50)   -- starts red, cycles rainbow
+    local BOB_HANDLE   = Color3.fromRGB(200, 80,  80)
+    local BOB_ICON     = Color3.fromRGB(255, 60,  60)
+
     local PURPLE_BRIGHT = Color3.fromRGB(180, 0, 255)
     local PURPLE_GLOW   = Color3.fromRGB(210, 80, 255)
     local PURPLE_DIM    = Color3.fromRGB(140, 50, 200)
     local PURPLE_BG     = Color3.fromRGB(20, 5, 30)
     local PURPLE_LOGO   = Color3.fromRGB(35, 10, 50)
 
-    local tagBG      = isOwner and OWN_BG      or PURPLE_BG
-    local tagLogo    = isOwner and OWN_LOGO     or PURPLE_LOGO
-    local tagStrokeC = isOwner and OWN_STROKE   or PURPLE_BRIGHT
-    local tagGlowC   = isOwner and OWN_GLOW     or PURPLE_GLOW
-    local tagTextC   = isOwner and OWN_TEXT     or PURPLE_GLOW
-    local tagHandleC = isOwner and OWN_HANDLE   or PURPLE_DIM
-    local tagIconC   = isOwner and OWN_ICON     or PURPLE_GLOW
-    local tagIconM   = isOwner and OWN_ICON     or PURPLE_BRIGHT
+    local tagBG      = (style=="owner" or style=="rainbow") and OWN_BG      or PURPLE_BG
+    local tagLogo    = (style=="owner" or style=="rainbow") and OWN_LOGO     or PURPLE_LOGO
+    local tagStrokeC = style=="owner" and OWN_STROKE  or style=="rainbow" and BOB_STROKE  or PURPLE_BRIGHT
+    local tagGlowC   = style=="owner" and OWN_GLOW    or style=="rainbow" and BOB_GLOW    or PURPLE_GLOW
+    local tagTextC   = style=="owner" and OWN_TEXT    or style=="rainbow" and BOB_TEXT    or PURPLE_GLOW
+    local tagHandleC = style=="owner" and OWN_HANDLE  or style=="rainbow" and BOB_HANDLE  or PURPLE_DIM
+    local tagIconC   = style=="owner" and OWN_ICON    or style=="rainbow" and BOB_ICON    or PURPLE_GLOW
+    local tagIconM   = style=="owner" and OWN_ICON    or style=="rainbow" and BOB_ICON    or PURPLE_BRIGHT
 
     local billboard = Instance.new("BillboardGui")
     billboard.Name             = "SoulBillboard"
@@ -154,7 +175,7 @@ local function attachTag(character, tagOwner, customName)
     glowRing.Parent = tag
     Instance.new("UICorner", glowRing).CornerRadius = UDim.new(0, 32)
     local glowStroke = Instance.new("UIStroke", glowRing)
-    glowStroke.Color = tagGlowC; glowStroke.Thickness = isOwner and 6 or 4; glowStroke.Transparency = 1
+    glowStroke.Color = tagGlowC; glowStroke.Thickness = (style=="owner" or style=="rainbow") and 6 or 4; glowStroke.Transparency = 1
 
     -- Logo box
     local logoBox = Instance.new("Frame")
@@ -185,7 +206,7 @@ local function attachTag(character, tagOwner, customName)
 
     TweenService:Create(iconMid,
         TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-        { BackgroundColor3 = isOwner and Color3.fromRGB(255,255,255) or Color3.fromRGB(255, 120, 255) }
+        { BackgroundColor3 = style=="owner" and Color3.fromRGB(255,255,255) or style=="rainbow" and Color3.fromRGB(255,80,80) or Color3.fromRGB(255, 120, 255) }
     ):Play()
 
     local displayName = customName or (tagOwner and tagOwner.Name) or "Soul User"
@@ -201,10 +222,13 @@ local function attachTag(character, tagOwner, customName)
     nameLabel.TextSize = 15; nameLabel.Font = Enum.Font.GothamBold
     nameLabel.TextXAlignment = Enum.TextXAlignment.Left; nameLabel.Parent = tag
 
-    -- Owner gets a white text stroke (glow effect)
-    if isOwner then
+    -- Owner gets white text glow, rainbow gets red text glow
+    if style == "owner" then
         local ts = Instance.new("UIStroke", nameLabel)
         ts.Color = Color3.fromRGB(255, 255, 255); ts.Thickness = 1.5; ts.Transparency = 0.3
+    elseif style == "rainbow" then
+        local ts = Instance.new("UIStroke", nameLabel)
+        ts.Color = Color3.fromRGB(255, 30, 30); ts.Thickness = 2; ts.Transparency = 0.2
     end
 
     local handleLabel = Instance.new("TextLabel")
@@ -245,50 +269,102 @@ local function attachTag(character, tagOwner, customName)
         end
     end)
 
-    -- Glitch — owner gets intense white glitch, others get purple glitch
+    -- Glitch — three styles: owner white, rainbow red, default purple
     local function startGlitch()
         local FLASH = Color3.fromRGB(255, 255, 255)
+        local RED   = Color3.fromRGB(255, 30,  30)
         local fastEnd = tick() + 2
+
+        -- Rainbow colour cycle for BOB staff name label
+        local RAINBOW = {
+            Color3.fromRGB(255, 0,   0),
+            Color3.fromRGB(255, 127, 0),
+            Color3.fromRGB(255, 255, 0),
+            Color3.fromRGB(0,   255, 0),
+            Color3.fromRGB(0,   180, 255),
+            Color3.fromRGB(100, 0,   255),
+            Color3.fromRGB(255, 0,   200),
+        }
+        local rainbowIdx = 1
+
         task.spawn(function()
-            if isOwner then
-                -- Owner: aggressive white glitch on spawn
+            if style == "owner" then
+                -- ── Owner: intense white glitch ────────────────────────
                 while tick() < fastEnd and nameLabel.Parent do
-                    nameLabel.TextColor3 = FLASH;                          task.wait(0.02)
-                    nameLabel.TextColor3 = Color3.fromRGB(180,180,180);    task.wait(0.02)
-                    nameLabel.TextColor3 = Color3.fromRGB(0, 0, 0);        task.wait(0.015)
-                    nameLabel.TextColor3 = FLASH;                          task.wait(0.03)
-                    tagStroke.Color = Color3.fromRGB(0,0,0);               task.wait(0.02)
+                    nameLabel.TextColor3 = FLASH;                       task.wait(0.02)
+                    nameLabel.TextColor3 = Color3.fromRGB(180,180,180); task.wait(0.02)
+                    nameLabel.TextColor3 = Color3.fromRGB(0,0,0);       task.wait(0.015)
+                    nameLabel.TextColor3 = FLASH;                       task.wait(0.03)
+                    tagStroke.Color = Color3.fromRGB(0,0,0);            task.wait(0.02)
                     tagStroke.Color = OWN_STROKE
                 end
                 nameLabel.TextColor3 = OWN_TEXT
                 tagStroke.Color = OWN_STROKE
-                -- Ongoing random white glitch
                 while nameLabel.Parent do
                     task.wait(math.random(15, 50) / 10)
                     if not nameLabel.Parent then break end
                     for _ = 1, math.random(3, 6) do
-                        nameLabel.TextColor3 = FLASH;                        task.wait(0.03)
-                        nameLabel.TextColor3 = Color3.fromRGB(80,80,80);     task.wait(0.03)
-                        nameLabel.TextColor3 = Color3.fromRGB(0,0,0);        task.wait(0.02)
-                        nameLabel.TextColor3 = FLASH;                        task.wait(0.02)
+                        nameLabel.TextColor3 = FLASH;                    task.wait(0.03)
+                        nameLabel.TextColor3 = Color3.fromRGB(80,80,80); task.wait(0.03)
+                        nameLabel.TextColor3 = Color3.fromRGB(0,0,0);    task.wait(0.02)
+                        nameLabel.TextColor3 = FLASH;                    task.wait(0.02)
                     end
                     nameLabel.TextColor3 = OWN_TEXT
-                    -- Flicker the border
                     TweenService:Create(tagStroke, TweenInfo.new(0.05), { Color = Color3.fromRGB(0,0,0) }):Play()
                     task.wait(0.08)
                     TweenService:Create(tagStroke, TweenInfo.new(0.2),  { Color = OWN_STROKE }):Play()
-                    -- Flicker glow ring
                     TweenService:Create(glowStroke, TweenInfo.new(0.05), { Transparency = 1 }):Play()
                     task.wait(0.1)
                     TweenService:Create(glowStroke, TweenInfo.new(0.3),  { Transparency = 0.3 }):Play()
                 end
-            else
-                -- Others: standard purple glitch
+
+            elseif style == "rainbow" then
+                -- ── Rainbow: cycling colour + red glitch ──────────────
+                -- Fast initial red glitch burst
                 while tick() < fastEnd and nameLabel.Parent do
-                    nameLabel.TextColor3 = FLASH;        task.wait(0.03)
+                    nameLabel.TextColor3 = RED;                         task.wait(0.02)
+                    nameLabel.TextColor3 = Color3.fromRGB(180,0,0);     task.wait(0.02)
+                    nameLabel.TextColor3 = Color3.fromRGB(0,0,0);       task.wait(0.015)
+                    nameLabel.TextColor3 = RED;                         task.wait(0.03)
+                    tagStroke.Color = Color3.fromRGB(0,0,0);            task.wait(0.02)
+                    tagStroke.Color = BOB_STROKE
+                end
+                -- Continuous slow rainbow cycle on the name
+                task.spawn(function()
+                    while nameLabel.Parent do
+                        rainbowIdx = (rainbowIdx % #RAINBOW) + 1
+                        TweenService:Create(nameLabel, TweenInfo.new(0.18, Enum.EasingStyle.Linear),
+                            { TextColor3 = RAINBOW[rainbowIdx] }):Play()
+                        task.wait(0.18)
+                    end
+                end)
+                -- Ongoing random red glitch interrupts the rainbow
+                while nameLabel.Parent do
+                    task.wait(math.random(10, 30) / 10)
+                    if not nameLabel.Parent then break end
+                    -- Red glitch flash
+                    for _ = 1, math.random(2, 5) do
+                        nameLabel.TextColor3 = RED;                      task.wait(0.04)
+                        nameLabel.TextColor3 = Color3.fromRGB(0,0,0);   task.wait(0.03)
+                        nameLabel.TextColor3 = RED;                      task.wait(0.03)
+                    end
+                    -- Red border flicker
+                    TweenService:Create(tagStroke, TweenInfo.new(0.04), { Color = Color3.fromRGB(0,0,0) }):Play()
+                    task.wait(0.06)
+                    TweenService:Create(tagStroke, TweenInfo.new(0.15), { Color = BOB_STROKE }):Play()
+                    -- Glow ring pulse
+                    TweenService:Create(glowStroke, TweenInfo.new(0.05), { Transparency = 1 }):Play()
+                    task.wait(0.08)
+                    TweenService:Create(glowStroke, TweenInfo.new(0.25), { Transparency = 0.3 }):Play()
+                end
+
+            else
+                -- ── Default: standard purple glitch ───────────────────
+                while tick() < fastEnd and nameLabel.Parent do
+                    nameLabel.TextColor3 = FLASH;         task.wait(0.03)
                     nameLabel.TextColor3 = PURPLE_BRIGHT; task.wait(0.03)
                     nameLabel.TextColor3 = Color3.fromRGB(100, 0, 200); task.wait(0.02)
-                    nameLabel.TextColor3 = PURPLE_GLOW;  task.wait(0.04)
+                    nameLabel.TextColor3 = PURPLE_GLOW;   task.wait(0.04)
                     tagStroke.Color = Color3.fromRGB(255, 100, 255); task.wait(0.03)
                     tagStroke.Color = PURPLE_BRIGHT
                 end
@@ -315,91 +391,37 @@ local function attachTag(character, tagOwner, customName)
     local fi = TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
     TweenService:Create(tag,         fi, { BackgroundTransparency = 0 }):Play()
     TweenService:Create(tagStroke,   fi, { Transparency = 0 }):Play()
-    TweenService:Create(glowStroke,  fi, { Transparency = isOwner and 0.3 or 0.6 }):Play()
+    TweenService:Create(glowStroke,  fi, { Transparency = (style=="owner" or style=="rainbow") and 0.3 or 0.6 }):Play()
     TweenService:Create(logoBox,     fi, { BackgroundTransparency = 0 }):Play()
     TweenService:Create(nameLabel,   fi, { TextTransparency = 0 }):Play()
     TweenService:Create(handleLabel, fi, { TextTransparency = 0 }):Play()
     task.delay(0.65, startGlitch)
 end
 
--- ===================== INJECTOR-ONLY NAMETAGS =====================
--- When you inject, an invisible marker is planted on your Head.
--- Other injectors detect that marker and show your tag above you.
--- Non-injectors get no tag shown above them at all.
+-- ===================== NAMETAGS — ALL PLAYERS =====================
+-- Shows "Soul User" above every player when you inject.
+-- Your own tag uses your custom name from CUSTOM_TAGS.
+-- Non-injectors just see "Soul User" above everyone including you.
 
-local MARKER_NAME = "SoulV1Active"
-
--- Plant our invisible marker so other injectors can see us
-local function plantMarker(character)
+local function applyTagToPlayer(p, char)
     task.spawn(function()
-        local head = character:WaitForChild("Head", 10)
+        local head = char:WaitForChild("Head", 10)
         if not head then return end
-        if head:FindFirstChild(MARKER_NAME) then return end
-        local marker = Instance.new("BillboardGui")
-        marker.Name    = MARKER_NAME
-        marker.Size    = UDim2.new(0, 0, 0, 0)
-        marker.Enabled = false
-        marker.Parent  = head
-    end)
-end
-
--- Show our own tag to ourselves
-local function showOwnTag(character)
-    task.spawn(function()
-        local head = character:WaitForChild("Head", 10)
-        if not head then return end
-        fetchNametag(player, function(nametag)
-            attachTag(character, player, nametag)
+        fetchNametag(p, function(nametag)
+            attachTag(char, p, nametag)
         end)
     end)
 end
 
-if player.Character then
-    plantMarker(player.Character)
-    showOwnTag(player.Character)
-end
-player.CharacterAdded:Connect(function(char)
-    plantMarker(char)
-    showOwnTag(char)
-end)
+-- Own tag
+if player.Character then applyTagToPlayer(player, player.Character) end
+player.CharacterAdded:Connect(function(char) applyTagToPlayer(player, char) end)
 
--- Watch another player — only show their tag if they have the marker (i.e. they injected)
+-- All other players
 local function watchPlayer(p)
     if p == player then return end
-
-    local function onCharAdded(char)
-        task.spawn(function()
-            local head = char:WaitForChild("Head", 10)
-            if not head then return end
-
-            local function applyTag()
-                fetchNametag(p, function(nametag)
-                    attachTag(char, p, nametag)
-                end)
-            end
-
-            -- Already has marker (injected before we started watching)
-            if head:FindFirstChild(MARKER_NAME) then
-                applyTag(); return
-            end
-
-            -- Wait for marker to appear (they inject after we do)
-            local conn
-            conn = head.ChildAdded:Connect(function(child)
-                if child.Name == MARKER_NAME then
-                    conn:Disconnect()
-                    applyTag()
-                end
-            end)
-            -- Clean up if they leave
-            char.AncestryChanged:Connect(function()
-                if not char.Parent then pcall(function() conn:Disconnect() end) end
-            end)
-        end)
-    end
-
-    if p.Character then onCharAdded(p.Character) end
-    p.CharacterAdded:Connect(onCharAdded)
+    if p.Character then applyTagToPlayer(p, p.Character) end
+    p.CharacterAdded:Connect(function(char) applyTagToPlayer(p, char) end)
 end
 
 for _, p in ipairs(Players:GetPlayers()) do watchPlayer(p) end

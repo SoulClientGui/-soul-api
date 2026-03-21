@@ -261,28 +261,84 @@ local function attachTag(character, tagOwner, customName)
     task.delay(0.65, startGlitch)
 end
 
--- ===================== SHOW TAGS ON ALL PLAYERS =====================
--- Tags show on every player automatically, no marker or injection needed
+-- ===================== INJECTOR-ONLY NAMETAGS =====================
+-- When you inject, an invisible marker is planted on your Head.
+-- Other injectors detect that marker and show your tag above you.
+-- Non-injectors get no tag shown above them at all.
 
-local function applyTagToPlayer(p, char)
+local MARKER_NAME = "SoulV1Active"
+
+-- Plant our invisible marker so other injectors can see us
+local function plantMarker(character)
     task.spawn(function()
-        local head = char:WaitForChild("Head", 10)
+        local head = character:WaitForChild("Head", 10)
         if not head then return end
-        fetchNametag(p, function(nametag)
-            attachTag(char, p, nametag)
+        if head:FindFirstChild(MARKER_NAME) then return end
+        local marker = Instance.new("BillboardGui")
+        marker.Name    = MARKER_NAME
+        marker.Size    = UDim2.new(0, 0, 0, 0)
+        marker.Enabled = false
+        marker.Parent  = head
+    end)
+end
+
+-- Show our own tag to ourselves
+local function showOwnTag(character)
+    task.spawn(function()
+        local head = character:WaitForChild("Head", 10)
+        if not head then return end
+        fetchNametag(player, function(nametag)
+            attachTag(character, player, nametag)
         end)
     end)
 end
 
--- Own tag
-if player.Character then applyTagToPlayer(player, player.Character) end
-player.CharacterAdded:Connect(function(char) applyTagToPlayer(player, char) end)
+if player.Character then
+    plantMarker(player.Character)
+    showOwnTag(player.Character)
+end
+player.CharacterAdded:Connect(function(char)
+    plantMarker(char)
+    showOwnTag(char)
+end)
 
--- Every other player
+-- Watch another player — only show their tag if they have the marker (i.e. they injected)
 local function watchPlayer(p)
     if p == player then return end
-    if p.Character then applyTagToPlayer(p, p.Character) end
-    p.CharacterAdded:Connect(function(char) applyTagToPlayer(p, char) end)
+
+    local function onCharAdded(char)
+        task.spawn(function()
+            local head = char:WaitForChild("Head", 10)
+            if not head then return end
+
+            local function applyTag()
+                fetchNametag(p, function(nametag)
+                    attachTag(char, p, nametag)
+                end)
+            end
+
+            -- Already has marker (injected before we started watching)
+            if head:FindFirstChild(MARKER_NAME) then
+                applyTag(); return
+            end
+
+            -- Wait for marker to appear (they inject after we do)
+            local conn
+            conn = head.ChildAdded:Connect(function(child)
+                if child.Name == MARKER_NAME then
+                    conn:Disconnect()
+                    applyTag()
+                end
+            end)
+            -- Clean up if they leave
+            char.AncestryChanged:Connect(function()
+                if not char.Parent then pcall(function() conn:Disconnect() end) end
+            end)
+        end)
+    end
+
+    if p.Character then onCharAdded(p.Character) end
+    p.CharacterAdded:Connect(onCharAdded)
 end
 
 for _, p in ipairs(Players:GetPlayers()) do watchPlayer(p) end

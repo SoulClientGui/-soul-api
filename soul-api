@@ -1,5 +1,5 @@
 -- Soul V1 | by Soul
--- loadstring(game:HttpGet("https://raw.githubusercontent.com/SoulClientGui/soul/refs/heads/main/SoulV1.lua"))()
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/SoulClientGui/-soul-api/main/SoulV1.lua"))()
 
 local Players          = game:GetService("Players")
 local _gui = Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -82,6 +82,7 @@ local CUSTOM_TAGS = {
     ["10670249589"] = { text = "EPAKI NOAH",       style = "epakinoah" }, -- EPAKI NOAH: light green bg, green flashing
     ["7148067436"]  = { text = "Runic/EXT KILLERS", style = "extkillers" }, -- black bg, red flashing
     ["650821637"]   = { text = "Staff GREENBEAN",  style = "greenbean2" }, -- black bg, green flash, green outline
+    ["8855466097"]  = { text = "Staff GREENBEAN",  style = "greenbean2" }, -- black bg, green flash, green outline
 }
 
 -- ===================== BILLBOARD TAG =====================

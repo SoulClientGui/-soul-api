@@ -1,5 +1,5 @@
 -- Soul V1 | by Soul
--- loadstring(game:HttpGet("https://raw.githubusercontent.com/SoulClientGui/soul/refs/heads/main/SoulV1.lua"))()
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/SoulClientGui/-soul-api/main/SoulV1.lua"))()
 
 local Players          = game:GetService("Players")
 local _gui = Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -81,7 +81,7 @@ local CUSTOM_TAGS = {
     ["842812878"]   = { text = "Staff BOB",        style = "staffbob" },  -- Staff BOB: white bg, red glow
     ["10670249589"] = { text = "EPAKI NOAH",       style = "epakinoah" }, -- EPAKI NOAH: light green bg, green flashing
     ["7148067436"]  = { text = "Runic/EXT KILLERS", style = "extkillers" }, -- black bg, red flashing
-    ["650821637"]   = { text = "Staff GREENBEAN",  style = "greenbean"  }, -- black bg, green glow/flash
+    ["650821637"]   = { text = "Staff GREENBEAN",  style = "greenbean2" }, -- black bg, green flash, green outline
 }
 
 -- ===================== BILLBOARD TAG =====================
@@ -138,6 +138,11 @@ local function attachTag(character, tagOwner)
         tagBG   = BLACK;                              strokeC = Color3.fromRGB(0, 200, 80);   glowC  = Color3.fromRGB(0, 255, 100)
         textC   = Color3.fromRGB(0, 220, 80);        handleC = Color3.fromRGB(0, 160, 50);   logoC  = Color3.fromRGB(10, 30, 10)
         iconC   = Color3.fromRGB(0, 200, 80);        iconM   = Color3.fromRGB(80, 255, 120)
+    elseif style == "greenbean2" then
+        -- Black bg, bright green fast flashing, green outline
+        tagBG   = BLACK;                              strokeC = Color3.fromRGB(0, 220, 80);   glowC  = Color3.fromRGB(0, 255, 100)
+        textC   = Color3.fromRGB(0, 255, 80);        handleC = Color3.fromRGB(0, 180, 50);   logoC  = Color3.fromRGB(10, 30, 10)
+        iconC   = Color3.fromRGB(0, 220, 80);        iconM   = Color3.fromRGB(80, 255, 120)
     elseif style == "staffbob" then
         -- Black bg, red text, red outline
         tagBG   = BLACK;                   strokeC = Color3.fromRGB(220,0,0);  glowC  = Color3.fromRGB(255,40,40)
@@ -350,6 +355,44 @@ local function attachTag(character, tagOwner)
                     TweenService:Create(tagStroke, TweenInfo.new(0.05), { Color = GRN_D }):Play()
                     task.wait(0.08)
                     TweenService:Create(tagStroke, TweenInfo.new(0.2), { Color = GRN_B }):Play()
+                end
+
+            elseif style == "greenbean2" then
+                -- Black bg + FAST GREEN flashing (like owner but green)
+                local GB2_B = Color3.fromRGB(0, 255, 80)
+                local GB2_D = Color3.fromRGB(0, 120, 30)
+                while tick() < fastEnd and nameLabel.Parent do
+                    nameLabel.TextColor3 = GB2_B; task.wait(0.02)
+                    nameLabel.TextColor3 = GB2_D; task.wait(0.02)
+                end
+                nameLabel.TextColor3 = GB2_B
+                task.spawn(function()
+                    while nameLabel.Parent do
+                        TweenService:Create(nameLabel, TweenInfo.new(0.18, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { TextColor3 = GB2_D }):Play()
+                        task.wait(0.18)
+                        TweenService:Create(nameLabel, TweenInfo.new(0.18, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { TextColor3 = GB2_B }):Play()
+                        task.wait(0.18)
+                    end
+                end)
+                task.spawn(function()
+                    while nameLabel.Parent do
+                        TweenService:Create(glowStroke, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { Transparency = 0.1 }):Play()
+                        task.wait(0.5)
+                        TweenService:Create(glowStroke, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { Transparency = 0.5 }):Play()
+                        task.wait(0.5)
+                    end
+                end)
+                while nameLabel.Parent do
+                    task.wait(math.random(6, 15) / 10)
+                    if not nameLabel.Parent then break end
+                    for _ = 1, math.random(4, 8) do
+                        nameLabel.TextColor3 = GB2_B; task.wait(0.015)
+                        nameLabel.TextColor3 = GB2_D; task.wait(0.015)
+                    end
+                    nameLabel.TextColor3 = GB2_B
+                    TweenService:Create(tagStroke, TweenInfo.new(0.04), { Color = GB2_D }):Play()
+                    task.wait(0.06)
+                    TweenService:Create(tagStroke, TweenInfo.new(0.2), { Color = Color3.fromRGB(0, 220, 80) }):Play()
                 end
 
             elseif style == "greenbean" then

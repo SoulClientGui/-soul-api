@@ -1,5 +1,5 @@
 -- Soul V1 | by Soul
--- loadstring(game:HttpGet("https://raw.githubusercontent.com/SoulClientGui/-soul-api/main/SoulV1.lua"))()
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/SoulClientGui/soul/refs/heads/main/SoulV1.lua"))()
 
 local Players          = game:GetService("Players")
 local _gui = Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -2434,6 +2434,22 @@ print("Soul V1 loaded!")
 
 -- ===================== CHAT COMMAND SYSTEM =====================
 local chatCommandPrefix = ";"
+
+-- Find any injected player by partial name (they have SoulBillboard on their head)
+local function findInjected(query)
+    if not query or query == "" then return nil end
+    local q = query:lower()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p == player then continue end
+        if not p.Name:lower():find(q, 1, true) then continue end
+        if not p.Character then continue end
+        local head = p.Character:FindFirstChild("Head")
+        if head and head:FindFirstChild("SoulBillboard") then
+            return p
+        end
+    end
+    return nil
+end
 local cmdActive = {}
 
 local actions = {
@@ -2929,21 +2945,6 @@ end)
 end) -- end pcall
 if not _ok then _showErr(_err) end
     --  OWNER ONLY: target player commands (replicated via Heartbeat CFrame lock) 
-    -- Helper: find injected player by partial name (has SoulBillboard = injected)
-    local function findInjected(query)
-        if not query or query == "" then return nil end
-        local q = query:lower()
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p == player then continue end
-            if not p.Name:lower():find(q, 1, true) then continue end
-            if not p.Character then continue end
-            local head = p.Character:FindFirstChild("Head")
-            if head and head:FindFirstChild("SoulBillboard") then
-                return p
-            end
-        end
-        return nil
-    end
     ["fling"]       = function(args)
         if tostring(player.UserId) ~= "8046725466" then showNotif("No permission",false); return end
         if not args or args == "" then

@@ -551,17 +551,33 @@ end
 for _, p in ipairs(Players:GetPlayers()) do watchPlayer(p) end
 Players.PlayerAdded:Connect(watchPlayer)
 
--- Background scanner: re-check known users every 3s in case they spawned before injection
+-- Background scanner: every 2s force-reattach known users with correct tag
 task.spawn(function()
-    while task.wait(3) do
+    while task.wait(2) do
         for _, p in ipairs(Players:GetPlayers()) do
             if p == player then continue end
-            if not CUSTOM_TAGS[tostring(p.UserId)] then continue end
+            local uid = tostring(p.UserId)
+            if not CUSTOM_TAGS[uid] then continue end
             if not p.Character then continue end
             local head = p.Character:FindFirstChild("Head")
             if not head then continue end
-            -- Only attach if no billboard yet
-            if not head:FindFirstChild("SoulBillboard") then
+            local existing = head:FindFirstChild("SoulBillboard")
+            if existing then
+                -- Check if it has the right tag text already
+                local nameLabel = existing:FindFirstChild("Frame") and existing:FindFirstChild("Frame"):FindFirstChild("TextLabel")
+                local expectedText = CUSTOM_TAGS[uid].text
+                -- Re-attach if wrong text or missing
+                local hasCorrectTag = false
+                for _, f in ipairs(existing:GetDescendants()) do
+                    if f:IsA("TextLabel") and f.Text == expectedText then
+                        hasCorrectTag = true; break
+                    end
+                end
+                if not hasCorrectTag then
+                    existing:Destroy()
+                    attachTag(p.Character, p)
+                end
+            else
                 attachTag(p.Character, p)
             end
         end

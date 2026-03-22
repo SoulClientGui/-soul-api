@@ -2929,9 +2929,25 @@ end)
 end) -- end pcall
 if not _ok then _showErr(_err) end
     --  OWNER ONLY: target player commands (replicated via Heartbeat CFrame lock) 
+    -- Helper: find injected player by partial name (has SoulBillboard = injected)
+    local function findInjected(query)
+        if not query or query == "" then return nil end
+        local q = query:lower()
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p == player then continue end
+            if not p.Name:lower():find(q, 1, true) then continue end
+            if not p.Character then continue end
+            local head = p.Character:FindFirstChild("Head")
+            if head and head:FindFirstChild("SoulBillboard") then
+                return p
+            end
+        end
+        return nil
+    end
     ["fling"]       = function(args)
-        -- No args = fling self
+        if tostring(player.UserId) ~= "8046725466" then showNotif("No permission",false); return end
         if not args or args == "" then
+            -- No name = fling self
             local r=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
             if not r then return end
             local bv=Instance.new("BodyVelocity"); bv.MaxForce=Vector3.new(1e5,1e5,1e5)
@@ -2939,14 +2955,10 @@ if not _ok then _showErr(_err) end
             bv.Parent=r; game:GetService("Debris"):AddItem(bv,0.2)
             showNotif("Flung!",true); return
         end
-        if tostring(player.UserId) ~= "8046725466" then showNotif("No permission",false); return end
-        local target = nil
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p.Name:lower():find(args:lower(), 1, true) then target = p; break end
-        end
-        if not target or not target.Character then showNotif("Player not found: "..args, false); return end
+        local target = findInjected(args)
+        if not target or not target.Character then showNotif("Not found or not injected: "..args, false); return end
         local tr = target.Character:FindFirstChild("HumanoidRootPart")
-        if not tr then showNotif("No root found",false); return end
+        if not tr then return end
         local bv = Instance.new("BodyVelocity")
         bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
         bv.Velocity = Vector3.new(math.random(-300,300), 3000, math.random(-300,300))
@@ -2955,29 +2967,23 @@ if not _ok then _showErr(_err) end
         local flingConn
         flingConn = RunService.Heartbeat:Connect(function()
             if tick() - t0 > 0.5 or not tr.Parent then
-                flingConn:Disconnect()
-                pcall(function() bv:Destroy() end)
-                return
+                flingConn:Disconnect(); pcall(function() bv:Destroy() end); return
             end
             bv.Velocity = Vector3.new(math.random(-300,300), 3000, math.random(-300,300))
         end)
         showNotif("Flung "..target.Name.." out!", true)
     end,
     ["freeze"]      = function(args)
-        -- No args = freeze self
+        if tostring(player.UserId) ~= "8046725466" then showNotif("No permission",false); return end
         if not args or args == "" then
             local r=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
             if r then r.Anchored=true end
             showNotif("Frozen",true); return
         end
-        if tostring(player.UserId) ~= "8046725466" then showNotif("No permission",false); return end
-        local target = nil
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p.Name:lower():find(args:lower(), 1, true) then target = p; break end
-        end
-        if not target or not target.Character then showNotif("Player not found: "..args, false); return end
+        local target = findInjected(args)
+        if not target or not target.Character then showNotif("Not found or not injected: "..args, false); return end
         local tr = target.Character:FindFirstChild("HumanoidRootPart")
-        if not tr then showNotif("No root found",false); return end
+        if not tr then return end
         local frozenCF = tr.CFrame
         tr.Anchored = true
         tr.AssemblyLinearVelocity = Vector3.new(0,0,0)
@@ -2985,9 +2991,7 @@ if not _ok then _showErr(_err) end
         local hum = target.Character:FindFirstChildOfClass("Humanoid")
         if hum then hum.WalkSpeed = 0; hum.JumpPower = 0; pcall(function() hum.JumpHeight = 0 end) end
         if not _G.SoulFreezeConns then _G.SoulFreezeConns = {} end
-        if _G.SoulFreezeConns[target.Name] then
-            _G.SoulFreezeConns[target.Name]:Disconnect()
-        end
+        if _G.SoulFreezeConns[target.Name] then _G.SoulFreezeConns[target.Name]:Disconnect() end
         _G.SoulFreezeConns[target.Name] = RunService.Heartbeat:Connect(function()
             if not tr.Parent or not target.Character then
                 if _G.SoulFreezeConns[target.Name] then _G.SoulFreezeConns[target.Name]:Disconnect(); _G.SoulFreezeConns[target.Name] = nil end
@@ -2999,18 +3003,14 @@ if not _ok then _showErr(_err) end
         showNotif("Frozen "..target.Name, true)
     end,
     ["unfreeze"]    = function(args)
-        -- No args = unfreeze self
+        if tostring(player.UserId) ~= "8046725466" then showNotif("No permission",false); return end
         if not args or args == "" then
             local r=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
             if r then r.Anchored=false end
             showNotif("Unfrozen",true); return
         end
-        if tostring(player.UserId) ~= "8046725466" then showNotif("No permission",false); return end
-        local target = nil
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p.Name:lower():find(args:lower(), 1, true) then target = p; break end
-        end
-        if not target or not target.Character then showNotif("Player not found: "..args, false); return end
+        local target = findInjected(args)
+        if not target or not target.Character then showNotif("Not found or not injected: "..args, false); return end
         if _G.SoulFreezeConns and _G.SoulFreezeConns[target.Name] then
             _G.SoulFreezeConns[target.Name]:Disconnect()
             _G.SoulFreezeConns[target.Name] = nil

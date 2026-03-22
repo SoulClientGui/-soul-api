@@ -1,5 +1,5 @@
 -- Soul V1 | by Soul
--- loadstring(game:HttpGet("https://github.com/SoulClientGui/-soul-api/edit/main/SoulV1.lua"))()
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/SoulClientGui/-soul-api/main/SoulV1.lua"))()
 
 local Players          = game:GetService("Players")
 local _gui = Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -2383,6 +2383,76 @@ local actions = {
     ["resetjump"]   = function() local h=player.Character and player.Character:FindFirstChildOfClass("Humanoid"); if h then pcall(function() h.UseJumpPower=true end); h.JumpPower=50 end; showNotif("Reset Jump",true) end,
     ["spawn"]       = function() local sp=workspace:FindFirstChildOfClass("SpawnLocation"); local r=player.Character and player.Character:FindFirstChild("HumanoidRootPart"); if sp and r then r.CFrame=sp.CFrame+Vector3.new(0,5,0) end; showNotif("Goto Spawn",true) end,
     ["disco"]       = function() local cols={Color3.fromRGB(255,0,0),Color3.fromRGB(0,255,0),Color3.fromRGB(0,0,255),Color3.fromRGB(255,255,0),Color3.fromRGB(255,0,255),Color3.fromRGB(0,255,255)}; task.spawn(function() local l=game:GetService("Lighting"); for _=1,30 do l.Ambient=cols[math.random(#cols)]; l.OutdoorAmbient=cols[math.random(#cols)]; task.wait(0.15) end; l.Ambient=Color3.fromRGB(70,70,70); l.OutdoorAmbient=Color3.fromRGB(70,70,70) end); showNotif("Disco!",true) end,
+    --  OWNER ONLY: target player commands 
+    ["fling"]       = function(args)
+        -- If no args, fling self (existing behaviour)
+        if not args or args == "" then
+            local r=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if not r then return end
+            local bv=Instance.new("BodyVelocity"); bv.MaxForce=Vector3.new(1e5,1e5,1e5)
+            bv.Velocity=Vector3.new(math.random(-80,80),200,math.random(-80,80))
+            bv.Parent=r; game:GetService("Debris"):AddItem(bv,0.2)
+            showNotif("Flung!",true); return
+        end
+        -- Owner only: fling a target player
+        if tostring(player.UserId) ~= "8046725466" then showNotif("No permission",false); return end
+        local target = nil
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Name:lower():find(args:lower(), 1, true) then target = p; break end
+        end
+        if not target or not target.Character then showNotif("Player not found: "..args, false); return end
+        local tr = target.Character:FindFirstChild("HumanoidRootPart")
+        if not tr then showNotif("No root found",false); return end
+        -- Use BodyVelocity to send them flying
+        local bv = Instance.new("BodyVelocity")
+        bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+        bv.Velocity = Vector3.new(math.random(-200,200), 2000, math.random(-200,200))
+        bv.Parent = tr
+        game:GetService("Debris"):AddItem(bv, 0.3)
+        showNotif("Flung "..target.Name.." out!", true)
+    end,
+    ["freeze"]      = function(args)
+        -- If no args, freeze self (existing behaviour)
+        if not args or args == "" then
+            local r=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if r then r.Anchored=true end
+            showNotif("Frozen",true); return
+        end
+        -- Owner only: freeze a target player
+        if tostring(player.UserId) ~= "8046725466" then showNotif("No permission",false); return end
+        local target = nil
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Name:lower():find(args:lower(), 1, true) then target = p; break end
+        end
+        if not target or not target.Character then showNotif("Player not found: "..args, false); return end
+        local tr = target.Character:FindFirstChild("HumanoidRootPart")
+        if not tr then showNotif("No root found",false); return end
+        tr.Anchored = true
+        local hum = target.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed = 0; hum.JumpPower = 0 end
+        showNotif("Frozen "..target.Name, true)
+    end,
+    ["unfreeze"]    = function(args)
+        -- If no args, unfreeze self
+        if not args or args == "" then
+            local r=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if r then r.Anchored=false end
+            showNotif("Unfrozen",true); return
+        end
+        -- Owner only: unfreeze a target player
+        if tostring(player.UserId) ~= "8046725466" then showNotif("No permission",false); return end
+        local target = nil
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Name:lower():find(args:lower(), 1, true) then target = p; break end
+        end
+        if not target or not target.Character then showNotif("Player not found: "..args, false); return end
+        local tr = target.Character:FindFirstChild("HumanoidRootPart")
+        if not tr then showNotif("No root found",false); return end
+        tr.Anchored = false
+        local hum = target.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed = 16; hum.JumpPower = 50 end
+        showNotif("Unfrozen "..target.Name, true)
+    end,
     ["sky pink"]    = function() local l=game:GetService("Lighting"); l.FogColor=Color3.fromRGB(255,150,200); l.FogEnd=500; l.Ambient=Color3.fromRGB(220,80,160); l.OutdoorAmbient=Color3.fromRGB(220,80,160); showNotif("Pink Sky",true) end,
     ["sky red"]     = function() local l=game:GetService("Lighting"); l.FogColor=Color3.fromRGB(180,0,0); l.FogEnd=500; l.Ambient=Color3.fromRGB(120,0,0); l.OutdoorAmbient=Color3.fromRGB(120,0,0); showNotif("Red Sky",true) end,
     ["sky blue"]    = function() local l=game:GetService("Lighting"); l.FogColor=Color3.fromRGB(0,100,220); l.FogEnd=500; l.Ambient=Color3.fromRGB(0,50,140); l.OutdoorAmbient=Color3.fromRGB(0,50,140); showNotif("Blue Sky",true) end,

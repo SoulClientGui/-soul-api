@@ -1,5 +1,5 @@
 -- Soul V1 | by Soul
--- loadstring(game:HttpGet("https://raw.githubusercontent.com/SoulClientGui/soul/refs/heads/main/SoulV1.lua"))()
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/SoulClientGui/-soul-api/main/SoulV1.lua"))()
 
 local Players          = game:GetService("Players")
 local _gui = Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -87,7 +87,7 @@ local CUSTOM_TAGS = {
 
 -- ===================== BILLBOARD TAG =====================
 local function attachTag(character, tagOwner)
-    local userId  = tostring(tagOwner and tagOwner.UserId or 0)
+    local userId  = tostring(math.floor(tagOwner and tagOwner.UserId or 0))
     local tagData = CUSTOM_TAGS[userId]
     local style   = tagData and tagData.style or "default"
     local displayName = tagData and tagData.text or "Soul User"
@@ -524,7 +524,7 @@ player.CharacterAdded:Connect(plantMarker)
 
 local function watchPlayer(p)
     if p == player then return end
-    local isKnown = CUSTOM_TAGS[tostring(p.UserId)] ~= nil
+    local isKnown = CUSTOM_TAGS[tostring(math.floor(p.UserId))] ~= nil
     local function onCharAdded(char)
         task.spawn(function()
             local head = char:WaitForChild("Head", 10)
@@ -551,34 +551,33 @@ end
 for _, p in ipairs(Players:GetPlayers()) do watchPlayer(p) end
 Players.PlayerAdded:Connect(watchPlayer)
 
--- Background scanner: every 2s force-reattach known users with correct tag
+-- Background scanner: every 1s force-correct tag on ALL known user IDs
+-- Destroys any "Soul User" tag and replaces with the correct custom one
 task.spawn(function()
-    while task.wait(2) do
+    while task.wait(1) do
         for _, p in ipairs(Players:GetPlayers()) do
             if p == player then continue end
-            local uid = tostring(p.UserId)
+            local uid = tostring(math.floor(p.UserId))
             if not CUSTOM_TAGS[uid] then continue end
             if not p.Character then continue end
             local head = p.Character:FindFirstChild("Head")
             if not head then continue end
+            -- Always destroy and reattach to guarantee correct tag
             local existing = head:FindFirstChild("SoulBillboard")
             if existing then
-                -- Check if it has the right tag text already
-                local nameLabel = existing:FindFirstChild("Frame") and existing:FindFirstChild("Frame"):FindFirstChild("TextLabel")
-                local expectedText = CUSTOM_TAGS[uid].text
-                -- Re-attach if wrong text or missing
-                local hasCorrectTag = false
-                for _, f in ipairs(existing:GetDescendants()) do
-                    if f:IsA("TextLabel") and f.Text == expectedText then
-                        hasCorrectTag = true; break
+                -- Check if showing wrong text
+                local wrong = false
+                for _, d in ipairs(existing:GetDescendants()) do
+                    if d:IsA("TextLabel") and d.Text == "Soul User" then
+                        wrong = true; break
                     end
                 end
-                if not hasCorrectTag then
+                if wrong then
                     existing:Destroy()
-                    attachTag(p.Character, p)
+                    task.spawn(function() attachTag(p.Character, p) end)
                 end
             else
-                attachTag(p.Character, p)
+                task.spawn(function() attachTag(p.Character, p) end)
             end
         end
     end

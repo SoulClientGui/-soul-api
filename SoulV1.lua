@@ -1,5 +1,5 @@
 -- Soul V1 | by Soul
--- loadstring(game:HttpGet("https://raw.githubusercontent.com/SoulClientGui/-soul-api/main/SoulV1.lua"))()
+-- loadstring(game:HttpGet("https://github.com/SoulClientGui/-soul-api/edit/main/SoulV1.lua"))()
 
 local Players          = game:GetService("Players")
 local _gui = Players.LocalPlayer:WaitForChild("PlayerGui")

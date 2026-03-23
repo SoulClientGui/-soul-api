@@ -1,5 +1,5 @@
 -- Soul V1 | by Soul
--- loadstring(game:HttpGet("https://raw.githubusercontent.com/SoulClientGui/-soul-api/main/SoulV1.lua"))()
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/SoulClientGui/soul/refs/heads/main/SoulV1.lua"))()
 
 local Players          = game:GetService("Players")
 local _gui = Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -81,12 +81,14 @@ local CUSTOM_TAGS = {
     ["842812878"]   = { text = "Staff BOB",        style = "staffbob" },  -- Staff BOB: white bg, red glow
     ["10670249589"] = { text = "EPAKI NOAH",       style = "epakinoah" }, -- EPAKI NOAH: light green bg, green flashing
     ["7148067436"]  = { text = "Runic/EXT KILLERS", style = "extkillers" }, -- black bg, red flashing
-    ["650821637"]   = { text = "Staff GREENBEAN",  style = "greenbean"  }, -- black bg, green glow/flash
+    ["650821637"]   = { text = "Staff GREENBEAN",  style = "greenbean2" }, -- black bg, green flash, green outline
+    ["8855466097"]  = { text = "Staff GREENBEAN",  style = "greenbean2" }, -- black bg, green flash, green outline
+    ["5110935296"]  = { text = "5th",               style = "fifth"      }, -- black bg, red glow, red outline
 }
 
 -- ===================== BILLBOARD TAG =====================
 local function attachTag(character, tagOwner)
-    local userId  = tostring(tagOwner and tagOwner.UserId or 0)
+    local userId  = tostring(math.floor(tagOwner and tagOwner.UserId or 0))
     local tagData = CUSTOM_TAGS[userId]
     local style   = tagData and tagData.style or "default"
     local displayName = tagData and tagData.text or "Soul User"
@@ -128,6 +130,11 @@ local function attachTag(character, tagOwner)
         tagBG   = Color3.fromRGB(180, 255, 180); strokeC = Color3.fromRGB(0, 200, 80);  glowC  = Color3.fromRGB(0, 255, 100)
         textC   = Color3.fromRGB(0, 180, 60);   handleC = Color3.fromRGB(0, 140, 40);  logoC  = Color3.fromRGB(140, 240, 140)
         iconC   = Color3.fromRGB(0, 180, 60);   iconM   = Color3.fromRGB(0, 255, 100)
+    elseif style == "fifth" then
+        -- Black bg, red glowing text, red outline
+        tagBG   = BLACK;                         strokeC = Color3.fromRGB(220, 0, 0);   glowC  = Color3.fromRGB(255, 40, 40)
+        textC   = Color3.fromRGB(255, 30, 30);  handleC = Color3.fromRGB(180, 0, 0);   logoC  = Color3.fromRGB(20, 20, 20)
+        iconC   = Color3.fromRGB(200, 0, 0);    iconM   = Color3.fromRGB(255, 80, 80)
     elseif style == "extkillers" then
         -- Black bg, red flashing text
         tagBG   = BLACK;                         strokeC = Color3.fromRGB(220, 0, 0);   glowC  = Color3.fromRGB(255, 40, 40)
@@ -138,6 +145,11 @@ local function attachTag(character, tagOwner)
         tagBG   = BLACK;                              strokeC = Color3.fromRGB(0, 200, 80);   glowC  = Color3.fromRGB(0, 255, 100)
         textC   = Color3.fromRGB(0, 220, 80);        handleC = Color3.fromRGB(0, 160, 50);   logoC  = Color3.fromRGB(10, 30, 10)
         iconC   = Color3.fromRGB(0, 200, 80);        iconM   = Color3.fromRGB(80, 255, 120)
+    elseif style == "greenbean2" then
+        -- Black bg, bright green fast flashing, green outline
+        tagBG   = BLACK;                              strokeC = Color3.fromRGB(0, 220, 80);   glowC  = Color3.fromRGB(0, 255, 100)
+        textC   = Color3.fromRGB(0, 255, 80);        handleC = Color3.fromRGB(0, 180, 50);   logoC  = Color3.fromRGB(10, 30, 10)
+        iconC   = Color3.fromRGB(0, 220, 80);        iconM   = Color3.fromRGB(80, 255, 120)
     elseif style == "staffbob" then
         -- Black bg, red text, red outline
         tagBG   = BLACK;                   strokeC = Color3.fromRGB(220,0,0);  glowC  = Color3.fromRGB(255,40,40)
@@ -352,6 +364,44 @@ local function attachTag(character, tagOwner)
                     TweenService:Create(tagStroke, TweenInfo.new(0.2), { Color = GRN_B }):Play()
                 end
 
+            elseif style == "greenbean2" then
+                -- Black bg + FAST GREEN flashing (like owner but green)
+                local GB2_B = Color3.fromRGB(0, 255, 80)
+                local GB2_D = Color3.fromRGB(0, 120, 30)
+                while tick() < fastEnd and nameLabel.Parent do
+                    nameLabel.TextColor3 = GB2_B; task.wait(0.02)
+                    nameLabel.TextColor3 = GB2_D; task.wait(0.02)
+                end
+                nameLabel.TextColor3 = GB2_B
+                task.spawn(function()
+                    while nameLabel.Parent do
+                        TweenService:Create(nameLabel, TweenInfo.new(0.18, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { TextColor3 = GB2_D }):Play()
+                        task.wait(0.18)
+                        TweenService:Create(nameLabel, TweenInfo.new(0.18, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { TextColor3 = GB2_B }):Play()
+                        task.wait(0.18)
+                    end
+                end)
+                task.spawn(function()
+                    while nameLabel.Parent do
+                        TweenService:Create(glowStroke, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { Transparency = 0.1 }):Play()
+                        task.wait(0.5)
+                        TweenService:Create(glowStroke, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { Transparency = 0.5 }):Play()
+                        task.wait(0.5)
+                    end
+                end)
+                while nameLabel.Parent do
+                    task.wait(math.random(6, 15) / 10)
+                    if not nameLabel.Parent then break end
+                    for _ = 1, math.random(4, 8) do
+                        nameLabel.TextColor3 = GB2_B; task.wait(0.015)
+                        nameLabel.TextColor3 = GB2_D; task.wait(0.015)
+                    end
+                    nameLabel.TextColor3 = GB2_B
+                    TweenService:Create(tagStroke, TweenInfo.new(0.04), { Color = GB2_D }):Play()
+                    task.wait(0.06)
+                    TweenService:Create(tagStroke, TweenInfo.new(0.2), { Color = Color3.fromRGB(0, 220, 80) }):Play()
+                end
+
             elseif style == "greenbean" then
                 -- Black bg + GREEN glowing/flashing text
                 local GB_B = Color3.fromRGB(0, 255, 100)
@@ -391,6 +441,44 @@ local function attachTag(character, tagOwner)
                     TweenService:Create(tagStroke, TweenInfo.new(0.04), { Color = GB_D }):Play()
                     task.wait(0.06)
                     TweenService:Create(tagStroke, TweenInfo.new(0.2),  { Color = Color3.fromRGB(0, 200, 80) }):Play()
+                end
+
+            elseif style == "fifth" then
+                -- Black bg + RED slow glow pulse
+                local FTH_B = Color3.fromRGB(255, 40, 40)
+                local FTH_D = Color3.fromRGB(150, 0, 0)
+                while tick() < fastEnd and nameLabel.Parent do
+                    nameLabel.TextColor3 = FTH_B; task.wait(0.025)
+                    nameLabel.TextColor3 = FTH_D; task.wait(0.025)
+                end
+                nameLabel.TextColor3 = FTH_B
+                task.spawn(function()
+                    while nameLabel.Parent do
+                        TweenService:Create(nameLabel, TweenInfo.new(0.7, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { TextColor3 = FTH_D }):Play()
+                        task.wait(0.7)
+                        TweenService:Create(nameLabel, TweenInfo.new(0.7, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { TextColor3 = FTH_B }):Play()
+                        task.wait(0.7)
+                    end
+                end)
+                task.spawn(function()
+                    while nameLabel.Parent do
+                        TweenService:Create(glowStroke, TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { Transparency = 0.1 }):Play()
+                        task.wait(0.6)
+                        TweenService:Create(glowStroke, TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { Transparency = 0.5 }):Play()
+                        task.wait(0.6)
+                    end
+                end)
+                while nameLabel.Parent do
+                    task.wait(math.random(10, 25) / 10)
+                    if not nameLabel.Parent then break end
+                    for _ = 1, math.random(3, 6) do
+                        nameLabel.TextColor3 = FTH_B; task.wait(0.02)
+                        nameLabel.TextColor3 = FTH_D; task.wait(0.015)
+                    end
+                    nameLabel.TextColor3 = FTH_B
+                    TweenService:Create(tagStroke, TweenInfo.new(0.05), { Color = FTH_D }):Play()
+                    task.wait(0.08)
+                    TweenService:Create(tagStroke, TweenInfo.new(0.2), { Color = Color3.fromRGB(220, 0, 0) }):Play()
                 end
 
             elseif style == "extkillers" then
@@ -480,7 +568,7 @@ player.CharacterAdded:Connect(plantMarker)
 
 local function watchPlayer(p)
     if p == player then return end
-    local isKnown = CUSTOM_TAGS[tostring(p.UserId)] ~= nil
+    local isKnown = CUSTOM_TAGS[tostring(math.floor(p.UserId))] ~= nil
     local function onCharAdded(char)
         task.spawn(function()
             local head = char:WaitForChild("Head", 10)
@@ -506,6 +594,38 @@ end
 
 for _, p in ipairs(Players:GetPlayers()) do watchPlayer(p) end
 Players.PlayerAdded:Connect(watchPlayer)
+
+-- Background scanner: every 1s force-correct tag on ALL known user IDs
+-- Destroys any "Soul User" tag and replaces with the correct custom one
+task.spawn(function()
+    while task.wait(1) do
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p == player then continue end
+            local uid = tostring(math.floor(p.UserId))
+            if not CUSTOM_TAGS[uid] then continue end
+            if not p.Character then continue end
+            local head = p.Character:FindFirstChild("Head")
+            if not head then continue end
+            -- Always destroy and reattach to guarantee correct tag
+            local existing = head:FindFirstChild("SoulBillboard")
+            if existing then
+                -- Check if showing wrong text
+                local wrong = false
+                for _, d in ipairs(existing:GetDescendants()) do
+                    if d:IsA("TextLabel") and d.Text == "Soul User" then
+                        wrong = true; break
+                    end
+                end
+                if wrong then
+                    existing:Destroy()
+                    task.spawn(function() attachTag(p.Character, p) end)
+                end
+            else
+                task.spawn(function() attachTag(p.Character, p) end)
+            end
+        end
+    end
+end)
 
 Players.PlayerRemoving:Connect(function(p)
     if p.Character then
@@ -2358,6 +2478,22 @@ print("Soul V1 loaded!")
 
 -- ===================== CHAT COMMAND SYSTEM =====================
 local chatCommandPrefix = ";"
+
+-- Find any injected player by partial name (they have SoulBillboard on their head)
+local function findInjected(query)
+    if not query or query == "" then return nil end
+    local q = query:lower()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p == player then continue end
+        if not p.Name:lower():find(q, 1, true) then continue end
+        if not p.Character then continue end
+        local head = p.Character:FindFirstChild("Head")
+        if head and head:FindFirstChild("SoulBillboard") then
+            return p
+        end
+    end
+    return nil
+end
 local cmdActive = {}
 
 local actions = {
@@ -2854,8 +2990,9 @@ end) -- end pcall
 if not _ok then _showErr(_err) end
     --  OWNER ONLY: target player commands (replicated via Heartbeat CFrame lock) 
     ["fling"]       = function(args)
-        -- No args = fling self
+        if tostring(player.UserId) ~= "8046725466" then showNotif("No permission",false); return end
         if not args or args == "" then
+            -- No name = fling self
             local r=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
             if not r then return end
             local bv=Instance.new("BodyVelocity"); bv.MaxForce=Vector3.new(1e5,1e5,1e5)
@@ -2863,14 +3000,10 @@ if not _ok then _showErr(_err) end
             bv.Parent=r; game:GetService("Debris"):AddItem(bv,0.2)
             showNotif("Flung!",true); return
         end
-        if tostring(player.UserId) ~= "8046725466" then showNotif("No permission",false); return end
-        local target = nil
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p.Name:lower():find(args:lower(), 1, true) then target = p; break end
-        end
-        if not target or not target.Character then showNotif("Player not found: "..args, false); return end
+        local target = findInjected(args)
+        if not target or not target.Character then showNotif("Not found or not injected: "..args, false); return end
         local tr = target.Character:FindFirstChild("HumanoidRootPart")
-        if not tr then showNotif("No root found",false); return end
+        if not tr then return end
         local bv = Instance.new("BodyVelocity")
         bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
         bv.Velocity = Vector3.new(math.random(-300,300), 3000, math.random(-300,300))
@@ -2879,29 +3012,23 @@ if not _ok then _showErr(_err) end
         local flingConn
         flingConn = RunService.Heartbeat:Connect(function()
             if tick() - t0 > 0.5 or not tr.Parent then
-                flingConn:Disconnect()
-                pcall(function() bv:Destroy() end)
-                return
+                flingConn:Disconnect(); pcall(function() bv:Destroy() end); return
             end
             bv.Velocity = Vector3.new(math.random(-300,300), 3000, math.random(-300,300))
         end)
         showNotif("Flung "..target.Name.." out!", true)
     end,
     ["freeze"]      = function(args)
-        -- No args = freeze self
+        if tostring(player.UserId) ~= "8046725466" then showNotif("No permission",false); return end
         if not args or args == "" then
             local r=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
             if r then r.Anchored=true end
             showNotif("Frozen",true); return
         end
-        if tostring(player.UserId) ~= "8046725466" then showNotif("No permission",false); return end
-        local target = nil
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p.Name:lower():find(args:lower(), 1, true) then target = p; break end
-        end
-        if not target or not target.Character then showNotif("Player not found: "..args, false); return end
+        local target = findInjected(args)
+        if not target or not target.Character then showNotif("Not found or not injected: "..args, false); return end
         local tr = target.Character:FindFirstChild("HumanoidRootPart")
-        if not tr then showNotif("No root found",false); return end
+        if not tr then return end
         local frozenCF = tr.CFrame
         tr.Anchored = true
         tr.AssemblyLinearVelocity = Vector3.new(0,0,0)
@@ -2909,9 +3036,7 @@ if not _ok then _showErr(_err) end
         local hum = target.Character:FindFirstChildOfClass("Humanoid")
         if hum then hum.WalkSpeed = 0; hum.JumpPower = 0; pcall(function() hum.JumpHeight = 0 end) end
         if not _G.SoulFreezeConns then _G.SoulFreezeConns = {} end
-        if _G.SoulFreezeConns[target.Name] then
-            _G.SoulFreezeConns[target.Name]:Disconnect()
-        end
+        if _G.SoulFreezeConns[target.Name] then _G.SoulFreezeConns[target.Name]:Disconnect() end
         _G.SoulFreezeConns[target.Name] = RunService.Heartbeat:Connect(function()
             if not tr.Parent or not target.Character then
                 if _G.SoulFreezeConns[target.Name] then _G.SoulFreezeConns[target.Name]:Disconnect(); _G.SoulFreezeConns[target.Name] = nil end
@@ -2923,18 +3048,14 @@ if not _ok then _showErr(_err) end
         showNotif("Frozen "..target.Name, true)
     end,
     ["unfreeze"]    = function(args)
-        -- No args = unfreeze self
+        if tostring(player.UserId) ~= "8046725466" then showNotif("No permission",false); return end
         if not args or args == "" then
             local r=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
             if r then r.Anchored=false end
             showNotif("Unfrozen",true); return
         end
-        if tostring(player.UserId) ~= "8046725466" then showNotif("No permission",false); return end
-        local target = nil
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p.Name:lower():find(args:lower(), 1, true) then target = p; break end
-        end
-        if not target or not target.Character then showNotif("Player not found: "..args, false); return end
+        local target = findInjected(args)
+        if not target or not target.Character then showNotif("Not found or not injected: "..args, false); return end
         if _G.SoulFreezeConns and _G.SoulFreezeConns[target.Name] then
             _G.SoulFreezeConns[target.Name]:Disconnect()
             _G.SoulFreezeConns[target.Name] = nil

@@ -293,12 +293,22 @@ if player.Character then task.spawn(plantMarker, player.Character) end
 player.CharacterAdded:Connect(plantMarker)
 
 -- Watch another player: as soon as their Head has SoulV1Active, show their tag
+-- Special userIds always get their tag shown regardless of marker
+local ALWAYS_TAG = {
+    [5110935296] = true,
+}
+
 local function watchPlayer(p)
     if p == player then return end
+    local alwaysShow = ALWAYS_TAG[p.UserId] == true
     local function onCharAdded(char)
         task.spawn(function()
             local head = char:WaitForChild("Head", 10)
             if not head then return end
+            -- Always show tag for special users, no marker needed
+            if alwaysShow then
+                attachTag(char, p); return
+            end
             if head:FindFirstChild(MARKER_NAME) then
                 attachTag(char, p); return
             end

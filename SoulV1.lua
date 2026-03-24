@@ -1651,6 +1651,57 @@ sadBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
+-- Shaders button
+sectionHeader(visualPage, "SHADERS", 236)
+
+local shaderBtn = Instance.new("TextButton")
+shaderBtn.Size = UDim2.new(1, -24, 0, 48); shaderBtn.Position = UDim2.new(0, 12, 0, 258)
+shaderBtn.BackgroundColor3 = BG_CARD; shaderBtn.Text = ""; shaderBtn.Parent = visualPage
+Instance.new("UICorner", shaderBtn).CornerRadius = UDim.new(0, 10)
+local shaderStroke = Instance.new("UIStroke", shaderBtn)
+shaderStroke.Color = RED_STROKE; shaderStroke.Thickness = 1.5; shaderStroke.Transparency = 0.4
+
+local shaderDot = Instance.new("Frame")
+shaderDot.Size = UDim2.new(0, 10, 0, 10); shaderDot.Position = UDim2.new(0, 14, 0.5, -5)
+shaderDot.BackgroundColor3 = RED_GLOW; shaderDot.Parent = shaderBtn
+Instance.new("UICorner", shaderDot).CornerRadius = UDim.new(1, 0)
+
+local shaderLbl = Instance.new("TextLabel")
+shaderLbl.Size = UDim2.new(1, -36, 0, 24); shaderLbl.Position = UDim2.new(0, 32, 0, 6)
+shaderLbl.BackgroundTransparency = 1; shaderLbl.Text = "Shaders"
+shaderLbl.TextColor3 = TXT_WHITE; shaderLbl.TextSize = 15; shaderLbl.Font = Enum.Font.GothamBold
+shaderLbl.TextXAlignment = Enum.TextXAlignment.Left; shaderLbl.Parent = shaderBtn
+
+local shaderSubLbl = Instance.new("TextLabel")
+shaderSubLbl.Size = UDim2.new(1, -36, 0, 16); shaderSubLbl.Position = UDim2.new(0, 32, 1, -18)
+shaderSubLbl.BackgroundTransparency = 1; shaderSubLbl.Text = "Load PShade Ultimate graphics"
+shaderSubLbl.TextColor3 = TXT_DIM; shaderSubLbl.TextSize = 11
+shaderSubLbl.Font = Enum.Font.Gotham; shaderSubLbl.TextXAlignment = Enum.TextXAlignment.Left
+shaderSubLbl.Parent = shaderBtn
+
+shaderBtn.MouseEnter:Connect(function()
+    TweenService:Create(shaderBtn, TweenInfo.new(0.12), { BackgroundColor3 = RED_BRIGHT }):Play()
+    TweenService:Create(shaderDot, TweenInfo.new(0.12), { BackgroundColor3 = GREEN_LOADED }):Play()
+end)
+shaderBtn.MouseLeave:Connect(function()
+    TweenService:Create(shaderBtn, TweenInfo.new(0.12), { BackgroundColor3 = BG_CARD }):Play()
+    TweenService:Create(shaderDot, TweenInfo.new(0.12), { BackgroundColor3 = RED_GLOW }):Play()
+end)
+shaderBtn.MouseButton1Click:Connect(function()
+    TweenService:Create(shaderDot, TweenInfo.new(0.1), { BackgroundColor3 = GREEN_LOADED }):Play()
+    shaderLbl.Text = "Loading Shaders..."
+    shaderLbl.TextColor3 = GREEN_LOADED
+    showNotif("Shaders", true)
+    task.spawn(function()
+        pcall(function()
+            loadstring(game:HttpGet('https://raw.githubusercontent.com/randomstring0/pshade-ultimate/refs/heads/main/src/cd.lua'))()
+        end)
+        shaderLbl.Text = "Shaders"
+        shaderLbl.TextColor3 = TXT_WHITE
+        TweenService:Create(shaderDot, TweenInfo.new(0.2), { BackgroundColor3 = RED_GLOW }):Play()
+    end)
+end)
+
 visualTabBtn.MouseButton1Click:Connect(function() switchTab("Visual") end)
 
 -- ===================== BOOSTS TAB =====================
@@ -3007,389 +3058,390 @@ UserInputService.InputBegan:Connect(function(inp, gp)
     end
 end)
 
+
 -- ===================== KEY SYSTEM =====================
--- All GUI is built above. Now hide the wrapper and show the key screen.
 wrapper.Visible = false
 
-local VALID_KEY     = "key12345"
-local PERM_KEY      = "key123455667@"
--- 2-day expiry: store first-use timestamp in a DataStore-free way using os.time()
--- We encode the expiry as seconds from Unix epoch. 2 days = 172800 seconds.
-local KEY_DURATION  = 172800  -- 2 days in seconds
+local VALID_KEY      = "key12345"
+local PERM_KEY       = "key123455667@"
+local KEY_DURATION   = 172800
 local KEY_STORE_NAME = "SoulV1_KeyExpiry"
 
--- Try to read stored expiry from a hidden IntValue in PlayerGui
 local function getStoredExpiry()
     local store = player.PlayerGui:FindFirstChild(KEY_STORE_NAME)
-    if store and store:IsA("IntValue") then
-        return store.Value
-    end
+    if store and store:IsA("IntValue") then return store.Value end
     return nil
 end
-
 local function setStoredExpiry(ts)
     local store = player.PlayerGui:FindFirstChild(KEY_STORE_NAME)
-    if not store then
-        store = Instance.new("IntValue")
-        store.Name = KEY_STORE_NAME
-        store.Parent = player.PlayerGui
-    end
+    if not store then store = Instance.new("IntValue"); store.Name = KEY_STORE_NAME; store.Parent = player.PlayerGui end
     store.Value = ts
 end
-
 local function isKeyExpired()
     local expiry = getStoredExpiry()
-    if not expiry or expiry == 0 then return false end -- not yet set
+    if not expiry or expiry == 0 then return false end
     return os.time() > expiry
 end
 
+-- ── BLOOD KEY GUI ──────────────────────────────────────────────
 local keyGui = Instance.new("ScreenGui")
-keyGui.Name           = "SoulKeySystem"
-keyGui.ResetOnSpawn   = false
+keyGui.Name = "SoulKeySystem"; keyGui.ResetOnSpawn = false
 keyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-keyGui.DisplayOrder   = 999
-keyGui.Parent         = gui
+keyGui.DisplayOrder = 999; keyGui.Parent = gui
 
--- Dark overlay
+-- Full screen dark overlay
 local ksOverlay = Instance.new("Frame")
-ksOverlay.Size = UDim2.new(1, 0, 1, 0)
-ksOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-ksOverlay.BackgroundTransparency = 0.5
-ksOverlay.BorderSizePixel = 0
-ksOverlay.Parent = keyGui
+ksOverlay.Size = UDim2.new(1,0,1,0); ksOverlay.BackgroundColor3 = Color3.fromRGB(0,0,0)
+ksOverlay.BackgroundTransparency = 0.35; ksOverlay.BorderSizePixel = 0; ksOverlay.Parent = keyGui
 
--- Card
+-- Blood drip canvas (behind card)
+local dripCanvas = Instance.new("Frame")
+dripCanvas.Size = UDim2.new(1,0,1,0); dripCanvas.BackgroundTransparency = 1
+dripCanvas.BorderSizePixel = 0; dripCanvas.ZIndex = 1; dripCanvas.Parent = keyGui
+
+-- Spawn blood drips
+local dripActive = true
+local function spawnDrip()
+    if not dripActive then return end
+    local drip = Instance.new("Frame")
+    local xPos = math.random(2, 98) / 100
+    drip.Size = UDim2.new(0, math.random(4, 10), 0, 0)
+    drip.Position = UDim2.new(xPos, 0, 0, 0)
+    drip.BackgroundColor3 = Color3.fromRGB(math.random(120,180), 0, 0)
+    drip.BackgroundTransparency = math.random(0, 3) / 10
+    drip.BorderSizePixel = 0; drip.ZIndex = 2; drip.Parent = dripCanvas
+    Instance.new("UICorner", drip).CornerRadius = UDim.new(0, 4)
+
+    -- Drip drop at bottom
+    local drop = Instance.new("Frame")
+    drop.Size = UDim2.new(1.5, 0, 0, 0); drop.Position = UDim2.new(-0.25, 0, 1, 0)
+    drop.BackgroundColor3 = drip.BackgroundColor3; drop.BorderSizePixel = 0
+    drop.ZIndex = 2; drop.Parent = drip
+    Instance.new("UICorner", drop).CornerRadius = UDim.new(1, 0)
+
+    local targetH = math.random(60, 280)
+    local speed   = math.random(18, 40) / 10
+
+    task.spawn(function()
+        -- Grow downward slowly
+        local start = tick()
+        while dripActive and drip.Parent and (tick() - start) < speed do
+            local pct = (tick() - start) / speed
+            local h = targetH * pct
+            drip.Size = UDim2.new(0, drip.Size.X.Offset, 0, h)
+            drop.Size = UDim2.new(1.5, 0, 0, drip.Size.X.Offset * 1.2)
+            task.wait(0.03)
+        end
+        -- Pause at bottom then fade
+        task.wait(math.random(8, 18) / 10)
+        if drip.Parent then
+            TweenService:Create(drip, TweenInfo.new(0.6), { BackgroundTransparency = 1 }):Play()
+            TweenService:Create(drop, TweenInfo.new(0.6), { BackgroundTransparency = 1 }):Play()
+            task.wait(0.65)
+            pcall(function() drip:Destroy() end)
+        end
+    end)
+end
+
+task.spawn(function()
+    for _ = 1, 12 do spawnDrip(); task.wait(0.18) end
+    while dripActive and keyGui.Parent do
+        task.wait(math.random(4, 12) / 10)
+        spawnDrip()
+    end
+end)
+
+-- Main card
 local ksCard = Instance.new("Frame")
-ksCard.Size             = UDim2.new(0, 320, 0, 0)
-ksCard.Position         = UDim2.new(0.5, -160, 0.5, -110)
-ksCard.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-ksCard.BorderSizePixel  = 0
-ksCard.ClipsDescendants = true
-ksCard.ZIndex           = 2
-ksCard.Parent           = keyGui
-Instance.new("UICorner", ksCard).CornerRadius = UDim.new(0, 12)
+ksCard.Size = UDim2.new(0, 440, 0, 0)
+ksCard.Position = UDim2.new(0.5, -220, 0.5, -160)
+ksCard.BackgroundColor3 = Color3.fromRGB(8, 0, 0)
+ksCard.BorderSizePixel = 0; ksCard.ClipsDescendants = false
+ksCard.ZIndex = 5; ksCard.Parent = keyGui
+Instance.new("UICorner", ksCard).CornerRadius = UDim.new(0, 16)
 local ksStroke = Instance.new("UIStroke", ksCard)
-ksStroke.Color = Color3.fromRGB(139, 0, 0); ksStroke.Thickness = 1.5; ksStroke.Transparency = 0.3
+ksStroke.Color = Color3.fromRGB(180, 0, 0); ksStroke.Thickness = 2; ksStroke.Transparency = 0.1
 
--- Header
-local ksHeader = Instance.new("Frame")
-ksHeader.Size = UDim2.new(1, 0, 0, 52)
-ksHeader.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
-ksHeader.BorderSizePixel = 0; ksHeader.ZIndex = 3; ksHeader.Parent = ksCard
+-- Inner card drip effect (blood along top edge)
+local cardDripRow = Instance.new("Frame")
+cardDripRow.Size = UDim2.new(1,0,0,6); cardDripRow.Position = UDim2.new(0,0,0,0)
+cardDripRow.BackgroundColor3 = Color3.fromRGB(160,0,0); cardDripRow.BorderSizePixel = 0
+cardDripRow.ZIndex = 6; cardDripRow.Parent = ksCard
 
-local ksHeaderDiv = Instance.new("Frame")
-ksHeaderDiv.Size = UDim2.new(1, 0, 0, 1); ksHeaderDiv.Position = UDim2.new(0, 0, 1, 0)
-ksHeaderDiv.BackgroundColor3 = Color3.fromRGB(139, 0, 0); ksHeaderDiv.BorderSizePixel = 0
-ksHeaderDiv.ZIndex = 3; ksHeaderDiv.Parent = ksHeader
+-- Left panel (logo side)
+local leftPanel = Instance.new("Frame")
+leftPanel.Size = UDim2.new(0, 130, 1, 0); leftPanel.Position = UDim2.new(0, 0, 0, 0)
+leftPanel.BackgroundColor3 = Color3.fromRGB(12, 0, 0); leftPanel.BorderSizePixel = 0
+leftPanel.ZIndex = 6; leftPanel.Parent = ksCard
+Instance.new("UICorner", leftPanel).CornerRadius = UDim.new(0, 16)
 
-local ksTitleLbl = Instance.new("TextLabel")
-ksTitleLbl.Size = UDim2.new(1, -16, 0, 26); ksTitleLbl.Position = UDim2.new(0, 16, 0, 8)
-ksTitleLbl.BackgroundTransparency = 1; ksTitleLbl.Text = "SOUL'S GUI"
-ksTitleLbl.TextColor3 = Color3.new(1, 1, 1); ksTitleLbl.TextSize = 17
-ksTitleLbl.Font = Enum.Font.GothamBold; ksTitleLbl.TextXAlignment = Enum.TextXAlignment.Left
-ksTitleLbl.ZIndex = 4; ksTitleLbl.Parent = ksHeader
+-- Logo label
+local logoLbl = Instance.new("TextLabel")
+logoLbl.Size = UDim2.new(1,-10,0,60); logoLbl.Position = UDim2.new(0,5,0,40)
+logoLbl.BackgroundTransparency = 1; logoLbl.Text = "S"
+logoLbl.TextColor3 = Color3.fromRGB(220,0,0); logoLbl.TextSize = 56
+logoLbl.Font = Enum.Font.GothamBlack; logoLbl.TextXAlignment = Enum.TextXAlignment.Center
+logoLbl.ZIndex = 7; logoLbl.Parent = leftPanel
 
-local ksSubLbl = Instance.new("TextLabel")
-ksSubLbl.Size = UDim2.new(1, -16, 0, 16); ksSubLbl.Position = UDim2.new(0, 16, 0, 32)
-ksSubLbl.BackgroundTransparency = 1; ksSubLbl.Text = "Key System   ·   by Soul"
-ksSubLbl.TextColor3 = Color3.fromRGB(120, 120, 140); ksSubLbl.TextSize = 11
-ksSubLbl.Font = Enum.Font.Gotham; ksSubLbl.TextXAlignment = Enum.TextXAlignment.Left
-ksSubLbl.ZIndex = 4; ksSubLbl.Parent = ksHeader
+-- Pulsing glow on S
+TweenService:Create(logoLbl,
+    TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+    { TextColor3 = Color3.fromRGB(255, 60, 60) }
+):Play()
 
--- Body
-local ksBody = Instance.new("Frame")
-ksBody.Size = UDim2.new(1, 0, 1, -52); ksBody.Position = UDim2.new(0, 0, 0, 52)
-ksBody.BackgroundTransparency = 1; ksBody.ZIndex = 3; ksBody.Parent = ksCard
+local scriptNameLbl = Instance.new("TextLabel")
+scriptNameLbl.Size = UDim2.new(1,-8,0,22); scriptNameLbl.Position = UDim2.new(0,4,0,100)
+scriptNameLbl.BackgroundTransparency = 1; scriptNameLbl.Text = "SOUL V1"
+scriptNameLbl.TextColor3 = Color3.new(1,1,1); scriptNameLbl.TextSize = 14
+scriptNameLbl.Font = Enum.Font.GothamBlack; scriptNameLbl.TextXAlignment = Enum.TextXAlignment.Center
+scriptNameLbl.ZIndex = 7; scriptNameLbl.Parent = leftPanel
+
+local byLbl = Instance.new("TextLabel")
+byLbl.Size = UDim2.new(1,-8,0,16); byLbl.Position = UDim2.new(0,4,0,122)
+byLbl.BackgroundTransparency = 1; byLbl.Text = "by Soul"
+byLbl.TextColor3 = Color3.fromRGB(160,50,50); byLbl.TextSize = 11
+byLbl.Font = Enum.Font.Gotham; byLbl.TextXAlignment = Enum.TextXAlignment.Center
+byLbl.ZIndex = 7; byLbl.Parent = leftPanel
+
+-- Version + Executor info at bottom of left panel
+local versionLbl = Instance.new("TextLabel")
+versionLbl.Size = UDim2.new(1,-8,0,14); versionLbl.Position = UDim2.new(0,4,1,-60)
+versionLbl.BackgroundTransparency = 1; versionLbl.Text = "Version"
+versionLbl.TextColor3 = Color3.fromRGB(100,30,30); versionLbl.TextSize = 10
+versionLbl.Font = Enum.Font.GothamBold; versionLbl.TextXAlignment = Enum.TextXAlignment.Center
+versionLbl.ZIndex = 7; versionLbl.Parent = leftPanel
+
+local versionValLbl = Instance.new("TextLabel")
+versionValLbl.Size = UDim2.new(1,-8,0,18); versionValLbl.Position = UDim2.new(0,4,1,-46)
+versionValLbl.BackgroundTransparency = 1; versionValLbl.Text = "v1"
+versionValLbl.TextColor3 = Color3.new(1,1,1); versionValLbl.TextSize = 13
+versionValLbl.Font = Enum.Font.GothamBold; versionValLbl.TextXAlignment = Enum.TextXAlignment.Center
+versionValLbl.ZIndex = 7; versionValLbl.Parent = leftPanel
+
+local execLbl = Instance.new("TextLabel")
+execLbl.Size = UDim2.new(1,-8,0,14); execLbl.Position = UDim2.new(0,4,1,-28)
+execLbl.BackgroundTransparency = 1; execLbl.Text = "Executor"
+execLbl.TextColor3 = Color3.fromRGB(100,30,30); execLbl.TextSize = 10
+execLbl.Font = Enum.Font.GothamBold; execLbl.TextXAlignment = Enum.TextXAlignment.Center
+execLbl.ZIndex = 7; execLbl.Parent = leftPanel
+
+local execValLbl = Instance.new("TextLabel")
+execValLbl.Size = UDim2.new(1,-8,0,18); execValLbl.Position = UDim2.new(0,4,1,-14)
+execValLbl.BackgroundTransparency = 1; execValLbl.Text = "Xeno"
+execValLbl.TextColor3 = Color3.new(1,1,1); execValLbl.TextSize = 13
+execValLbl.Font = Enum.Font.GothamBold; execValLbl.TextXAlignment = Enum.TextXAlignment.Center
+execValLbl.ZIndex = 7; execValLbl.Parent = leftPanel
+
+-- Small blood dot below S logo
+local logoDot = Instance.new("Frame")
+logoDot.Size = UDim2.new(0,8,0,8); logoDot.Position = UDim2.new(0.5,-4,0,163)
+logoDot.BackgroundColor3 = Color3.fromRGB(200,0,0); logoDot.BorderSizePixel=0; logoDot.ZIndex=7; logoDot.Parent=leftPanel
+Instance.new("UICorner",logoDot).CornerRadius=UDim.new(1,0)
+TweenService:Create(logoDot, TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut,-1,true),
+    { BackgroundColor3 = Color3.fromRGB(255,40,40) }):Play()
+
+-- Right panel (auth side)
+local rightPanel = Instance.new("Frame")
+rightPanel.Size = UDim2.new(1,-138,1,-8); rightPanel.Position = UDim2.new(0,134,0,4)
+rightPanel.BackgroundTransparency = 1; rightPanel.BorderSizePixel = 0
+rightPanel.ZIndex = 6; rightPanel.Parent = ksCard
+
+-- Authentication title
+local authTitle = Instance.new("TextLabel")
+authTitle.Size = UDim2.new(1,0,0,26); authTitle.Position = UDim2.new(0,0,0,16)
+authTitle.BackgroundTransparency = 1; authTitle.Text = "Authentication"
+authTitle.TextColor3 = Color3.new(1,1,1); authTitle.TextSize = 18
+authTitle.Font = Enum.Font.GothamBlack; authTitle.TextXAlignment = Enum.TextXAlignment.Left
+authTitle.ZIndex = 7; authTitle.Parent = rightPanel
+
+local authSubTitle = Instance.new("TextLabel")
+authSubTitle.Size = UDim2.new(1,0,0,16); authSubTitle.Position = UDim2.new(0,0,0,42)
+authSubTitle.BackgroundTransparency = 1; authSubTitle.Text = "Soul V1 — Key Required"
+authSubTitle.TextColor3 = Color3.fromRGB(160,50,50); authSubTitle.TextSize = 12
+authSubTitle.Font = Enum.Font.Gotham; authSubTitle.TextXAlignment = Enum.TextXAlignment.Left
+authSubTitle.ZIndex = 7; authSubTitle.Parent = rightPanel
+
+-- Access Granted banner (hidden initially)
+local accessBanner = Instance.new("Frame")
+accessBanner.Size = UDim2.new(1,-4,0,56); accessBanner.Position = UDim2.new(0,0,0,68)
+accessBanner.BackgroundColor3 = Color3.fromRGB(100,0,0)
+accessBanner.BackgroundTransparency = 1; accessBanner.BorderSizePixel = 0
+accessBanner.ZIndex = 7; accessBanner.Visible = false; accessBanner.Parent = rightPanel
+Instance.new("UICorner", accessBanner).CornerRadius = UDim.new(0, 10)
+
+local accessGrantedLbl = Instance.new("TextLabel")
+accessGrantedLbl.Size = UDim2.new(1,-16,0,28); accessGrantedLbl.Position = UDim2.new(0,12,0,6)
+accessGrantedLbl.BackgroundTransparency = 1; accessGrantedLbl.Text = "Access Granted!"
+accessGrantedLbl.TextColor3 = Color3.new(1,1,1); accessGrantedLbl.TextSize = 18
+accessGrantedLbl.Font = Enum.Font.GothamBlack; accessGrantedLbl.TextXAlignment = Enum.TextXAlignment.Left
+accessGrantedLbl.ZIndex = 8; accessGrantedLbl.Parent = accessBanner
+
+local accessSubLbl = Instance.new("TextLabel")
+accessSubLbl.Size = UDim2.new(1,-16,0,16); accessSubLbl.Position = UDim2.new(0,12,0,32)
+accessSubLbl.BackgroundTransparency = 1; accessSubLbl.Text = "Authenticated"
+accessSubLbl.TextColor3 = Color3.fromRGB(255,160,160); accessSubLbl.TextSize = 12
+accessSubLbl.Font = Enum.Font.Gotham; accessSubLbl.TextXAlignment = Enum.TextXAlignment.Left
+accessSubLbl.ZIndex = 8; accessSubLbl.Parent = accessBanner
+
+-- Status dot + text
+local statusRow = Instance.new("Frame")
+statusRow.Size = UDim2.new(1,-4,0,22); statusRow.Position = UDim2.new(0,0,0,68)
+statusRow.BackgroundTransparency = 1; statusRow.ZIndex = 7; statusRow.Parent = rightPanel
+
+local statusDot = Instance.new("Frame")
+statusDot.Size = UDim2.new(0,10,0,10); statusDot.Position = UDim2.new(0,0,0.5,-5)
+statusDot.BackgroundColor3 = Color3.fromRGB(200,200,200); statusDot.BorderSizePixel=0; statusDot.ZIndex=8; statusDot.Parent=statusRow
+Instance.new("UICorner",statusDot).CornerRadius=UDim.new(1,0)
 
 local ksCheckLbl = Instance.new("TextLabel")
-ksCheckLbl.Size = UDim2.new(1, -24, 0, 22); ksCheckLbl.Position = UDim2.new(0, 12, 0, 14)
+ksCheckLbl.Size = UDim2.new(1,-18,1,0); ksCheckLbl.Position = UDim2.new(0,16,0,0)
 ksCheckLbl.BackgroundTransparency = 1; ksCheckLbl.Text = "Checking whitelist..."
-ksCheckLbl.TextColor3 = Color3.fromRGB(160, 160, 180); ksCheckLbl.TextSize = 13
-ksCheckLbl.Font = Enum.Font.Gotham; ksCheckLbl.TextXAlignment = Enum.TextXAlignment.Left
-ksCheckLbl.TextTransparency = 1; ksCheckLbl.ZIndex = 4; ksCheckLbl.Parent = ksBody
+ksCheckLbl.TextColor3 = Color3.fromRGB(200,200,200); ksCheckLbl.TextSize = 13
+ksCheckLbl.Font = Enum.Font.GothamSemibold; ksCheckLbl.TextXAlignment = Enum.TextXAlignment.Left
+ksCheckLbl.TextTransparency = 1; ksCheckLbl.ZIndex = 8; ksCheckLbl.Parent = statusRow
 
-local ksWhitelistLbl = Instance.new("TextLabel")
-ksWhitelistLbl.Size = UDim2.new(1, -24, 0, 22); ksWhitelistLbl.Position = UDim2.new(0, 12, 0, 40)
-ksWhitelistLbl.BackgroundTransparency = 1
-ksWhitelistLbl.Text = "✓  Whitelisted — Enter your key below"
-ksWhitelistLbl.TextColor3 = Color3.fromRGB(80, 220, 100); ksWhitelistLbl.TextSize = 13
-ksWhitelistLbl.Font = Enum.Font.GothamSemibold; ksWhitelistLbl.TextXAlignment = Enum.TextXAlignment.Left
-ksWhitelistLbl.TextTransparency = 1; ksWhitelistLbl.ZIndex = 4; ksWhitelistLbl.Parent = ksBody
-
--- Key input box
+-- Key input area
 local ksInputBg = Instance.new("Frame")
-ksInputBg.Size = UDim2.new(1, -24, 0, 40); ksInputBg.Position = UDim2.new(0, 12, 0, 70)
-ksInputBg.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
-ksInputBg.BorderSizePixel = 0; ksInputBg.ZIndex = 4; ksInputBg.Parent = ksBody
+ksInputBg.Size = UDim2.new(1,-4,0,42); ksInputBg.Position = UDim2.new(0,0,0,102)
+ksInputBg.BackgroundColor3 = Color3.fromRGB(20,3,3); ksInputBg.BorderSizePixel = 0
+ksInputBg.ZIndex = 7; ksInputBg.Parent = rightPanel
 Instance.new("UICorner", ksInputBg).CornerRadius = UDim.new(0, 8)
 local ksInputStroke = Instance.new("UIStroke", ksInputBg)
-ksInputStroke.Color = Color3.fromRGB(80, 80, 100); ksInputStroke.Thickness = 1.5; ksInputStroke.Transparency = 0.3
+ksInputStroke.Color = Color3.fromRGB(100,0,0); ksInputStroke.Thickness = 1.5; ksInputStroke.Transparency = 0.3
 
 local ksKeyBox = Instance.new("TextBox")
-ksKeyBox.Size = UDim2.new(1, -16, 1, 0); ksKeyBox.Position = UDim2.new(0, 8, 0, 0)
-ksKeyBox.BackgroundTransparency = 1
-ksKeyBox.PlaceholderText = "Insert key here..."
-ksKeyBox.PlaceholderColor3 = Color3.fromRGB(90, 90, 110)
-ksKeyBox.Text = ""
-ksKeyBox.TextColor3 = Color3.new(1, 1, 1); ksKeyBox.TextSize = 14
-ksKeyBox.Font = Enum.Font.Gotham; ksKeyBox.ClearTextOnFocus = false
-ksKeyBox.TextXAlignment = Enum.TextXAlignment.Left
-ksKeyBox.ZIndex = 5; ksKeyBox.Parent = ksInputBg
+ksKeyBox.Size = UDim2.new(1,-16,1,0); ksKeyBox.Position = UDim2.new(0,8,0,0)
+ksKeyBox.BackgroundTransparency = 1; ksKeyBox.PlaceholderText = "Insert key here..."
+ksKeyBox.PlaceholderColor3 = Color3.fromRGB(100,40,40); ksKeyBox.Text = ""
+ksKeyBox.TextColor3 = Color3.new(1,1,1); ksKeyBox.TextSize = 14; ksKeyBox.Font = Enum.Font.Gotham
+ksKeyBox.ClearTextOnFocus = false; ksKeyBox.TextXAlignment = Enum.TextXAlignment.Left
+ksKeyBox.ZIndex = 8; ksKeyBox.Parent = ksInputBg
 
 -- Submit button
 local ksSubmitBtn = Instance.new("TextButton")
-ksSubmitBtn.Size = UDim2.new(1, -24, 0, 38); ksSubmitBtn.Position = UDim2.new(0, 12, 0, 118)
-ksSubmitBtn.BackgroundColor3 = Color3.fromRGB(139, 0, 0)
-ksSubmitBtn.Text = "Submit Key"
-ksSubmitBtn.TextColor3 = Color3.new(1, 1, 1); ksSubmitBtn.TextSize = 14
-ksSubmitBtn.Font = Enum.Font.GothamBold
-ksSubmitBtn.ZIndex = 4; ksSubmitBtn.Parent = ksBody
+ksSubmitBtn.Size = UDim2.new(1,-4,0,42); ksSubmitBtn.Position = UDim2.new(0,0,0,152)
+ksSubmitBtn.BackgroundColor3 = Color3.fromRGB(140,0,0); ksSubmitBtn.Text = "Submit Key"
+ksSubmitBtn.TextColor3 = Color3.new(1,1,1); ksSubmitBtn.TextSize = 15; ksSubmitBtn.Font = Enum.Font.GothamBold
+ksSubmitBtn.ZIndex = 7; ksSubmitBtn.Parent = rightPanel
 Instance.new("UICorner", ksSubmitBtn).CornerRadius = UDim.new(0, 8)
-ksSubmitBtn.MouseEnter:Connect(function()
-    TweenService:Create(ksSubmitBtn, TweenInfo.new(0.12), { BackgroundColor3 = Color3.fromRGB(200, 10, 10) }):Play()
-end)
-ksSubmitBtn.MouseLeave:Connect(function()
-    TweenService:Create(ksSubmitBtn, TweenInfo.new(0.12), { BackgroundColor3 = Color3.fromRGB(139, 0, 0) }):Play()
-end)
+ksSubmitBtn.MouseEnter:Connect(function() TweenService:Create(ksSubmitBtn,TweenInfo.new(0.12),{BackgroundColor3=Color3.fromRGB(200,10,10)}):Play() end)
+ksSubmitBtn.MouseLeave:Connect(function() TweenService:Create(ksSubmitBtn,TweenInfo.new(0.12),{BackgroundColor3=Color3.fromRGB(140,0,0)}):Play() end)
 
--- Status/error label
+-- Status label
 local ksStatusLbl = Instance.new("TextLabel")
-ksStatusLbl.Size = UDim2.new(1, -24, 0, 20); ksStatusLbl.Position = UDim2.new(0, 12, 0, 164)
+ksStatusLbl.Size = UDim2.new(1,-4,0,18); ksStatusLbl.Position = UDim2.new(0,0,0,200)
 ksStatusLbl.BackgroundTransparency = 1; ksStatusLbl.Text = ""
-ksStatusLbl.TextColor3 = Color3.fromRGB(255, 70, 70); ksStatusLbl.TextSize = 11
+ksStatusLbl.TextColor3 = Color3.fromRGB(255,80,80); ksStatusLbl.TextSize = 11
 ksStatusLbl.Font = Enum.Font.Gotham; ksStatusLbl.TextXAlignment = Enum.TextXAlignment.Center
-ksStatusLbl.ZIndex = 4; ksStatusLbl.Parent = ksBody
+ksStatusLbl.ZIndex = 7; ksStatusLbl.Parent = rightPanel
 
--- Auth success label
-local ksAuthLbl = Instance.new("Frame")
-ksAuthLbl.Size = UDim2.new(1, -24, 0, 38); ksAuthLbl.Position = UDim2.new(0, 12, 0, 118)
-ksAuthLbl.BackgroundColor3 = Color3.fromRGB(34, 160, 60)
-ksAuthLbl.BackgroundTransparency = 1; ksAuthLbl.ZIndex = 4; ksAuthLbl.Parent = ksBody
-ksAuthLbl.Visible = false
-Instance.new("UICorner", ksAuthLbl).CornerRadius = UDim.new(0, 8)
+-- Loading bar (shown after correct key)
+local loadingBar = Instance.new("Frame")
+loadingBar.Size = UDim2.new(1,-4,0,42); loadingBar.Position = UDim2.new(0,0,0,152)
+loadingBar.BackgroundColor3 = Color3.fromRGB(20,5,5); loadingBar.BorderSizePixel = 0
+loadingBar.ZIndex = 7; loadingBar.Visible = false; loadingBar.Parent = rightPanel
+Instance.new("UICorner", loadingBar).CornerRadius = UDim.new(0, 8)
+local loadingFill = Instance.new("Frame")
+loadingFill.Size = UDim2.new(0,0,1,0); loadingFill.BackgroundColor3 = Color3.fromRGB(160,0,0)
+loadingFill.BorderSizePixel = 0; loadingFill.ZIndex = 8; loadingFill.Parent = loadingBar
+Instance.new("UICorner", loadingFill).CornerRadius = UDim.new(0, 8)
+local loadingLbl = Instance.new("TextLabel")
+loadingLbl.Size = UDim2.new(1,0,1,0); loadingLbl.BackgroundTransparency = 1
+loadingLbl.Text = "Loading..."; loadingLbl.TextColor3 = Color3.new(1,1,1)
+loadingLbl.TextSize = 14; loadingLbl.Font = Enum.Font.GothamBold
+loadingLbl.ZIndex = 9; loadingLbl.Parent = loadingBar
 
-local ksAuthText = Instance.new("TextLabel")
-ksAuthText.Size = UDim2.new(1, 0, 1, 0); ksAuthText.BackgroundTransparency = 1
-ksAuthText.Text = "✓  Authenticated"; ksAuthText.TextColor3 = Color3.new(1, 1, 1)
-ksAuthText.TextSize = 14; ksAuthText.Font = Enum.Font.GothamBold
-ksAuthText.ZIndex = 5; ksAuthText.Parent = ksAuthLbl
+-- Whitelisted note at bottom
+local ksWhitelistLbl = Instance.new("TextLabel")
+ksWhitelistLbl.Size = UDim2.new(1,-4,0,16); ksWhitelistLbl.Position = UDim2.new(0,0,0,222)
+ksWhitelistLbl.BackgroundTransparency = 1; ksWhitelistLbl.Text = "Whitelisted users are let in automatically."
+ksWhitelistLbl.TextColor3 = Color3.fromRGB(100,40,40); ksWhitelistLbl.TextSize = 10
+ksWhitelistLbl.Font = Enum.Font.Gotham; ksWhitelistLbl.TextXAlignment = Enum.TextXAlignment.Center
+ksWhitelistLbl.ZIndex = 7; ksWhitelistLbl.Parent = rightPanel
 
--- Key submit logic
--- Helper: launch the main GUI after successful auth
-local function _showMainGui()
-    wrapper.Visible = true
-    wrapper.Size = UDim2.new(0, 0, 0, 0)
-    wrapper.Position = UDim2.new(0.5, 0, 1.5, 0)
-    sidebar.Size = UDim2.new(0, 0, 1, 0)
-    mainPanel.Size = UDim2.new(0, 0, 1, 0)
-    navbar.Size = UDim2.new(1, 0, 0, 0)
-    openSound:Play()
-    TweenService:Create(wrapper, TweenInfo.new(0.55, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-        { Size = UDim2.new(0, UI_W, 0, UI_H), Position = UDim2.new(0.5, -UI_W/2, 0.5, -UI_H/2) }):Play()
-    task.delay(0.28, function()
-        TweenService:Create(navbar, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
-            { Size = UDim2.new(1, 0, 0, NAV_H) }):Play()
-    end)
-    task.delay(0.38, function()
-        TweenService:Create(sidebar, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
-            { Size = UDim2.new(0, SIDE_W, 1, 0) }):Play()
-    end)
-    task.delay(0.52, function()
-        TweenService:Create(mainPanel, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
-            { Size = UDim2.new(0, MAIN_W, 1, 0) }):Play()
-        task.delay(0.2, function() switchTab("Home") end)
-    end)
-end
-
+-- Try key function
 local function doTryKey()
     local entered = ksKeyBox.Text:gsub("%s+", "")
+    local isPerm = (entered == PERM_KEY)
+    local isValid = isPerm or (entered == VALID_KEY)
 
-    -- ── PERMANENT KEY ────────────────────────────────────────
-    if entered == PERM_KEY then
-        ksStatusLbl.Text = ""
-        ksSubmitBtn.Visible = false
-        ksInputBg.Visible = false
-
-        -- Show special permanent access label
-        local permLbl = Instance.new("TextLabel")
-        permLbl.Size = UDim2.new(1,-24,0,42); permLbl.Position = UDim2.new(0,12,0,116)
-        permLbl.BackgroundColor3 = Color3.fromRGB(80,0,180)
-        permLbl.BackgroundTransparency = 0
-        permLbl.Text = "👑  Granted Permanent Access"
-        permLbl.TextColor3 = Color3.new(1,1,1); permLbl.TextSize = 14
-        permLbl.Font = Enum.Font.GothamBold
-        permLbl.TextXAlignment = Enum.TextXAlignment.Center
-        permLbl.ZIndex = 4; permLbl.Parent = ksBody
-        Instance.new("UICorner", permLbl).CornerRadius = UDim.new(0,8)
-
-        -- Purple glow pulse on the label
-        TweenService:Create(permLbl, TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, 2, true),
-            { BackgroundColor3 = Color3.fromRGB(140,0,255) }):Play()
-
-        task.wait(1.6)
-        starActive = false
-        local fo = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-        TweenService:Create(ksOverlay, fo, { BackgroundTransparency = 1 }):Play()
-        TweenService:Create(ksCard,    fo, { BackgroundTransparency = 1 }):Play()
-        for _, d in ipairs(ksCard:GetDescendants()) do
-            if d:IsA("TextLabel") or d:IsA("TextButton") then TweenService:Create(d, fo, { TextTransparency = 1 }):Play() end
-            if d:IsA("Frame") then TweenService:Create(d, fo, { BackgroundTransparency = 1 }):Play() end
-        end
-        task.wait(0.5); keyGui:Destroy()
-        _showMainGui()
+    if not isValid then
+        ksStatusLbl.Text = "✗  Invalid key"
+        TweenService:Create(ksInputBg, TweenInfo.new(0.08), { BackgroundColor3 = Color3.fromRGB(60,5,5) }):Play()
+        task.wait(0.25)
+        TweenService:Create(ksInputBg, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(20,3,3) }):Play()
         return
     end
 
-    -- ── TEMPORARY KEY (2-day expiry) ─────────────────────────
-    if entered == VALID_KEY then
-        -- Check if already expired
-        if isKeyExpired() then
-            ksStatusLbl.Text = "✗  Key expired (2-day limit reached)."
-            ksStatusLbl.TextColor3 = Color3.fromRGB(255, 60, 60)
-            TweenService:Create(ksInputBg, TweenInfo.new(0.1), { BackgroundColor3 = Color3.fromRGB(60,10,10) }):Play()
-            task.wait(0.3)
-            TweenService:Create(ksInputBg, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(28,28,34) }):Play()
-            return
-        end
-
-        -- Set expiry on first use (if not already set)
-        if not getStoredExpiry() or getStoredExpiry() == 0 then
-            setStoredExpiry(os.time() + KEY_DURATION)
-        end
-
-        ksStatusLbl.Text = ""
-        ksSubmitBtn.Visible = false
-        ksInputBg.Visible = false
-        ksAuthLbl.Visible = true
-        TweenService:Create(ksAuthLbl, TweenInfo.new(0.3), { BackgroundTransparency = 0 }):Play()
-
-        task.wait(1.2)
-        starActive = false
-        local fo = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-        TweenService:Create(ksOverlay, fo, { BackgroundTransparency = 1 }):Play()
-        TweenService:Create(ksCard,    fo, { BackgroundTransparency = 1 }):Play()
-        for _, d in ipairs(ksCard:GetDescendants()) do
-            if d:IsA("TextLabel") or d:IsA("TextButton") then TweenService:Create(d, fo, { TextTransparency = 1 }):Play() end
-            if d:IsA("Frame") then TweenService:Create(d, fo, { BackgroundTransparency = 1 }):Play() end
-        end
-        task.wait(0.5); keyGui:Destroy()
-        _showMainGui()
-    else
-        ksStatusLbl.Text = "✗  Invalid key. Try again."
-        TweenService:Create(ksInputBg, TweenInfo.new(0.1), { BackgroundColor3 = Color3.fromRGB(60,10,10) }):Play()
-        task.wait(0.3)
-        TweenService:Create(ksInputBg, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(28,28,34) }):Play()
+    if not isPerm and isKeyExpired() then
+        ksStatusLbl.Text = "✗  Key expired"; return
     end
+    if not isPerm and (not getStoredExpiry() or getStoredExpiry() == 0) then
+        setStoredExpiry(os.time() + KEY_DURATION)
+    end
+
+    -- Show Access Granted
+    ksStatusLbl.Text = ""
+    ksInputBg.Visible = false; ksSubmitBtn.Visible = false
+    ksWhitelistLbl.Visible = false; statusRow.Visible = false
+
+    accessBanner.Visible = true
+    TweenService:Create(accessBanner, TweenInfo.new(0.3), { BackgroundTransparency = 0 }):Play()
+    if isPerm then
+        accessBanner.BackgroundColor3 = Color3.fromRGB(120,0,0)
+        accessGrantedLbl.Text = "👑  Permanent Access"
+    end
+
+    -- Authenticated dot
+    local authDotRow = Instance.new("Frame")
+    authDotRow.Size = UDim2.new(1,-4,0,22); authDotRow.Position = UDim2.new(0,0,0,132)
+    authDotRow.BackgroundTransparency = 1; authDotRow.ZIndex = 7; authDotRow.Parent = rightPanel
+    local aDot = Instance.new("Frame")
+    aDot.Size = UDim2.new(0,10,0,10); aDot.Position = UDim2.new(0,0,0.5,-5)
+    aDot.BackgroundColor3 = Color3.fromRGB(80,220,100); aDot.BorderSizePixel=0; aDot.ZIndex=8; aDot.Parent=authDotRow
+    Instance.new("UICorner",aDot).CornerRadius=UDim.new(1,0)
+    local aLbl = Instance.new("TextLabel")
+    aLbl.Size = UDim2.new(1,-18,1,0); aLbl.Position = UDim2.new(0,16,0,0)
+    aLbl.BackgroundTransparency = 1; aLbl.Text = "Authenticated"
+    aLbl.TextColor3 = Color3.fromRGB(80,220,100); aLbl.TextSize = 13; aLbl.Font = Enum.Font.GothamSemibold
+    aLbl.TextXAlignment = Enum.TextXAlignment.Left; aLbl.ZIndex = 8; aLbl.Parent = authDotRow
+
+    -- Loading bar
+    task.wait(0.5)
+    loadingBar.Visible = true
+    TweenService:Create(loadingFill, TweenInfo.new(1.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+        { Size = UDim2.new(1, 0, 1, 0) }):Play()
+    task.wait(1.4)
+
+    -- Fade out and open main GUI
+    dripActive = false
+    local fo = TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+    TweenService:Create(ksOverlay, fo, { BackgroundTransparency = 1 }):Play()
+    TweenService:Create(ksCard,    fo, { BackgroundTransparency = 1 }):Play()
+    TweenService:Create(ksStroke,  fo, { Transparency = 1 }):Play()
+    task.wait(0.55)
+    keyGui:Destroy()
+    _showMainGui()
 end
 
 ksSubmitBtn.MouseButton1Click:Connect(doTryKey)
-ksKeyBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then doTryKey() end
-end)
+ksKeyBox.FocusLost:Connect(function(enter) if enter then doTryKey() end end)
 
--- ── GLITCH PURPLE STARS ──────────────────────────────────────
--- Spawn floating ★ symbols that glitch in colour and position behind the card
-local starActive = true
-local STAR_COLORS = {
-    Color3.fromRGB(180, 0, 255),
-    Color3.fromRGB(210, 80, 255),
-    Color3.fromRGB(255, 0, 200),
-    Color3.fromRGB(140, 0, 255),
-    Color3.fromRGB(255, 100, 255),
-    Color3.fromRGB(100, 0, 200),
-}
-
-local function spawnStar()
-    local star = Instance.new("TextLabel")
-    star.Size              = UDim2.new(0, 24, 0, 24)
-    star.BackgroundTransparency = 1
-    star.Text              = "★"
-    star.TextSize          = math.random(14, 28)
-    star.Font              = Enum.Font.GothamBold
-    star.TextColor3        = STAR_COLORS[math.random(#STAR_COLORS)]
-    star.TextTransparency  = 0
-    star.ZIndex            = 1  -- behind card (card is ZIndex 2)
-    -- Random position across the full screen
-    star.Position = UDim2.new(
-        math.random(0, 100) / 100, 0,
-        math.random(0, 100) / 100, 0
-    )
-    star.Parent = keyGui
-
-    -- Glitch loop for this star: random colour flicker + jitter
-    task.spawn(function()
-        while star.Parent and starActive do
-            -- Colour glitch
-            star.TextColor3 = STAR_COLORS[math.random(#STAR_COLORS)]
-
-            -- Random jitter in position
-            local jx = math.random(-6, 6)
-            local jy = math.random(-6, 6)
-            local baseX = star.Position.X.Scale
-            local baseY = star.Position.Y.Scale
-            star.Position = UDim2.new(baseX, jx, baseY, jy)
-
-            -- Occasionally flash transparent
-            if math.random(1, 4) == 1 then
-                star.TextTransparency = 0.7
-                task.wait(0.05)
-                star.TextTransparency = 0
-            end
-
-            -- Slow float upward
-            TweenService:Create(star,
-                TweenInfo.new(math.random(4, 9), Enum.EasingStyle.Linear),
-                { Position = UDim2.new(baseX, jx, baseY - 0.15, jy) }
-            ):Play()
-
-            task.wait(math.random(8, 20) / 100)
-        end
-        if star.Parent then star:Destroy() end
-    end)
-
-    -- Auto destroy after lifetime
-    local lifetime = math.random(5, 12)
-    task.delay(lifetime, function()
-        if star.Parent then
-            TweenService:Create(star, TweenInfo.new(0.5), { TextTransparency = 1 }):Play()
-            task.wait(0.5)
-            pcall(function() star:Destroy() end)
-        end
-    end)
-end
-
--- Spawn initial batch of stars
+-- Animate card open
 task.spawn(function()
-    for _ = 1, 25 do
-        spawnStar()
-        task.wait(0.08)
-    end
-    -- Keep spawning new stars while key GUI is open
-    while starActive and keyGui.Parent do
-        task.wait(math.random(3, 7) / 10)
-        spawnStar()
-    end
-end)
-
--- Stop spawning stars when key GUI is destroyed
-keyGui.AncestryChanged:Connect(function()
-    if not keyGui.Parent then
-        starActive = false
-    end
-end)
-
--- Animate card open sequence
-task.spawn(function()
-    TweenService:Create(ksCard, TweenInfo.new(0.38, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-        { Size = UDim2.new(0, 320, 0, 200) }):Play()
-    task.wait(0.5)
+    TweenService:Create(ksCard, TweenInfo.new(0.42, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+        { Size = UDim2.new(0, 440, 0, 260) }):Play()
+    task.wait(0.6)
     TweenService:Create(ksCheckLbl, TweenInfo.new(0.3), { TextTransparency = 0 }):Play()
-    task.wait(1.2)
+    task.wait(0.9)
+    statusDot.BackgroundColor3 = Color3.fromRGB(80, 220, 100)
     ksCheckLbl.Text = "✓  Connected to Soul's Gui"
     ksCheckLbl.TextColor3 = Color3.fromRGB(80, 220, 100)
-    TweenService:Create(ksWhitelistLbl, TweenInfo.new(0.3), { TextTransparency = 0 }):Play()
-    task.wait(0.4)
-    TweenService:Create(ksInputBg,   TweenInfo.new(0.25), {}):Play()
-    TweenService:Create(ksSubmitBtn, TweenInfo.new(0.25), {}):Play()
+    task.wait(0.5)
+    ksCheckLbl.Text = "✓  Whitelisted — Enter your key below"
     ksKeyBox:CaptureFocus()
+end)
+
+keyGui.AncestryChanged:Connect(function()
+    if not keyGui.Parent then dripActive = false end
 end)
